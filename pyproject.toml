@@ -46,16 +46,23 @@ ftqre = "ftqre.cli.main:app"
 
 [project.entry-points."ftqre.logical_estimators"]
 mock = "ftqre.backends.mock:MockLogicalEstimator"
+qualtran = "ftqre.backends.qualtran.adapter:QualtranLogicalEstimator"
 
 [project.entry-points."ftqre.physical_estimators"]
 analytical = "ftqre.backends.mock:AnalyticalPhysicalEstimator"
+azure = "ftqre.backends.azure.adapter:AzurePhysicalEstimator"
 
 [project.entry-points."ftqre.qec_schemes"]
 surface_code = "ftqre.core.qec:SurfaceCode"
 floquet_code = "ftqre.core.qec:FloquetCode"
+color_code = "ftqre.core.qec:color_code"
 
 [project.entry-points."ftqre.algorithm_templates"]
 shor = "ftqre.templates.shor:ShorTemplate"
+qpe = "ftqre.templates.qpe:QPETemplate"
+hamiltonian_sim = "ftqre.templates.hamiltonian_sim:HamiltonianSimTemplate"
+chemistry = "ftqre.templates.chemistry:ChemistryTemplate"
+grover = "ftqre.templates.grover:GroverTemplate"
 
 [tool.setuptools.packages.find]
 where = ["src"]

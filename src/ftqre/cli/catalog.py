@@ -74,14 +74,14 @@ def list_hardware() -> None:
 @catalog_app.command("qec")
 def list_qec() -> None:
     """List available QEC schemes."""
-    from ftqre.core.qec import _BUILTIN_SCHEMES
+    from ftqre.core.qec import QECScheme, _BUILTIN_SCHEMES
 
     table = Table(title="QEC Schemes")
     table.add_column("Name", style="cyan")
     table.add_column("Threshold", style="yellow", justify="right")
     table.add_column("Prefactor", style="green", justify="right")
-    for name, cls in sorted(_BUILTIN_SCHEMES.items()):
-        scheme = cls()
+    for name, entry in sorted(_BUILTIN_SCHEMES.items()):
+        scheme = entry if isinstance(entry, QECScheme) else entry()
         table.add_row(
             name,
             f"{scheme.error_correction_threshold:.4f}",
@@ -93,17 +93,22 @@ def list_qec() -> None:
 @catalog_app.command("backends")
 def list_backends() -> None:
     """List available estimation backends."""
-    from ftqre.backends.mock import AnalyticalPhysicalEstimator, MockLogicalEstimator
+    from ftqre.backends.registry import (
+        discover_logical_estimators,
+        discover_physical_estimators,
+    )
 
     table = Table(title="Estimation Backends")
     table.add_column("Name", style="cyan")
     table.add_column("Type", style="yellow")
     table.add_column("Available", style="green")
 
-    le = MockLogicalEstimator()
-    table.add_row(le.name, "logical", "yes" if le.is_available() else "no")
+    for name, backend in sorted(discover_logical_estimators().items()):
+        avail = "[green]yes[/green]" if backend.is_available() else "[red]no[/red]"
+        table.add_row(name, "logical", avail)
 
-    pe = AnalyticalPhysicalEstimator()
-    table.add_row(pe.name, "physical", "yes" if pe.is_available() else "no")
+    for name, backend in sorted(discover_physical_estimators().items()):
+        avail = "[green]yes[/green]" if backend.is_available() else "[red]no[/red]"
+        table.add_row(name, "physical", avail)
 
     console.print(table)

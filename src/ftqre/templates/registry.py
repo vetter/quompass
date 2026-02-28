@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 from ftqre.templates.base import AlgorithmTemplate
+from ftqre.templates.chemistry import ChemistryTemplate
+from ftqre.templates.grover import GroverTemplate
+from ftqre.templates.hamiltonian_sim import HamiltonianSimTemplate
+from ftqre.templates.qpe import QPETemplate
 from ftqre.templates.shor import ShorTemplate
 
 # Built-in templates
 _BUILTIN_TEMPLATES: dict[str, type[AlgorithmTemplate]] = {
     "shor": ShorTemplate,
+    "qpe": QPETemplate,
+    "hamiltonian_sim": HamiltonianSimTemplate,
+    "chemistry": ChemistryTemplate,
+    "grover": GroverTemplate,
 }
 
 

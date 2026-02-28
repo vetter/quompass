@@ -4,7 +4,14 @@ from ftqre._version import __version__
 from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
 from ftqre.core.error_budget import ErrorBudget
 from ftqre.core.hardware import HardwareModel, HardwarePreset, QubitParams
-from ftqre.core.qec import FloquetCode, QECScheme, SurfaceCode, get_qec_scheme
+from ftqre.core.qec import (
+    FloquetCode,
+    FormulaQEC,
+    QECScheme,
+    SurfaceCode,
+    color_code,
+    get_qec_scheme,
+)
 from ftqre.core.results import PhysicalEstimate
 
 __all__ = [
@@ -18,6 +25,8 @@ __all__ = [
     "QECScheme",
     "SurfaceCode",
     "FloquetCode",
+    "FormulaQEC",
+    "color_code",
     "PhysicalEstimate",
     "estimate",
 ]
@@ -92,23 +101,7 @@ def estimate(
 def _select_backends(
     logical_name: str, physical_name: str
 ) -> tuple:
-    """Select the best available backends."""
-    from ftqre.backends.mock import AnalyticalPhysicalEstimator, MockLogicalEstimator
+    """Select the best available backends using the registry."""
+    from ftqre.backends.registry import select_backends
 
-    # For now, use mock/analytical as defaults.
-    # Phase 2 will add entry_points-based discovery.
-    if logical_name == "auto":
-        le = MockLogicalEstimator()
-    elif logical_name == "mock":
-        le = MockLogicalEstimator()
-    else:
-        raise ValueError(f"Unknown logical backend: {logical_name}")
-
-    if physical_name == "auto":
-        pe = AnalyticalPhysicalEstimator()
-    elif physical_name == "analytical":
-        pe = AnalyticalPhysicalEstimator()
-    else:
-        raise ValueError(f"Unknown physical backend: {physical_name}")
-
-    return le, pe
+    return select_backends(logical_name, physical_name)
