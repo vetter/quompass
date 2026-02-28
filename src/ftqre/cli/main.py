@@ -6,6 +6,7 @@ import typer
 
 from ftqre.cli.catalog import catalog_app
 from ftqre.cli.estimate import estimate_cmd
+from ftqre.cli.explore import explore_cmd
 
 app = typer.Typer(
     name="ftqre",
@@ -15,6 +16,7 @@ app = typer.Typer(
 )
 
 app.command("estimate")(estimate_cmd)
+app.command("explore")(explore_cmd)
 app.add_typer(catalog_app, name="catalog")
 
 
