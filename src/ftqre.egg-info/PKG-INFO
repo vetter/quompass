@@ -1,0 +1,34 @@
+Metadata-Version: 2.4
+Name: ftqre
+Version: 0.1.0
+Summary: Portable Fault-Tolerant Quantum Resource Estimation
+Author: DOE Quantum Center
+License: BSD-3-Clause
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Physics
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.24
+Requires-Dist: typer>=0.9
+Requires-Dist: rich>=13.0
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: qualtran
+Requires-Dist: qualtran>=0.4; extra == "qualtran"
+Provides-Extra: azure
+Requires-Dist: qsharp>=1.0; extra == "azure"
+Provides-Extra: viz
+Requires-Dist: matplotlib>=3.7; extra == "viz"
+Requires-Dist: plotly>=5.15; extra == "viz"
+Provides-Extra: all
+Requires-Dist: ftqre[azure,qualtran,viz]; extra == "all"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: ruff>=0.1; extra == "dev"

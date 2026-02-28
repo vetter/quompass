@@ -1,0 +1,15 @@
+[console_scripts]
+ftqre = ftqre.cli.main:app
+
+[ftqre.algorithm_templates]
+shor = ftqre.templates.shor:ShorTemplate
+
+[ftqre.logical_estimators]
+mock = ftqre.backends.mock:MockLogicalEstimator
+
+[ftqre.physical_estimators]
+analytical = ftqre.backends.mock:AnalyticalPhysicalEstimator
+
+[ftqre.qec_schemes]
+floquet_code = ftqre.core.qec:FloquetCode
+surface_code = ftqre.core.qec:SurfaceCode

@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ftqre"
+version = "0.1.0"
+description = "Portable Fault-Tolerant Quantum Resource Estimation"
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+requires-python = ">=3.10"
+authors = [
+    {name = "DOE Quantum Center"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.24",
+    "typer>=0.9",
+    "rich>=13.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+qualtran = ["qualtran>=0.4"]
+azure = ["qsharp>=1.0"]
+viz = ["matplotlib>=3.7", "plotly>=5.15"]
+all = ["ftqre[qualtran,azure,viz]"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "mypy>=1.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+ftqre = "ftqre.cli.main:app"
+
+[project.entry-points."ftqre.logical_estimators"]
+mock = "ftqre.backends.mock:MockLogicalEstimator"
+
+[project.entry-points."ftqre.physical_estimators"]
+analytical = "ftqre.backends.mock:AnalyticalPhysicalEstimator"
+
+[project.entry-points."ftqre.qec_schemes"]
+surface_code = "ftqre.core.qec:SurfaceCode"
+floquet_code = "ftqre.core.qec:FloquetCode"
+
+[project.entry-points."ftqre.algorithm_templates"]
+shor = "ftqre.templates.shor:ShorTemplate"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: marks tests requiring real backend packages",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true

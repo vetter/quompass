@@ -1,0 +1,49 @@
+portable-qre-prompt.md
+pyproject.toml
+2025-12-05/architectural-decisions.md
+2025-12-05/implementation-plan.md
+2025-12-05/progress-summary.md
+2025-12-05/prompt.md
+docs/1-s2.0-S0167739X24002012-main.pdf
+docs/Britt-2017-Quantum Accelerators for High-Perfo.pdf
+docs/Broz-2023-Basic Research Needs in Quantum Comp.pdf
+docs/Burgholzer-2025-The Munich Quantum Software St.pdf
+docs/Cerezo-2021-Variational quantum algorithms.pdf
+docs/Hoefler-2023-Disentangling Hype from Practical.pdf
+docs/Kim-2024-A Fault-Tolerant Million Qubit-Scale.pdf
+docs/Mohseni-2024-How to Build a Quantum Supercompu.pdf
+docs/Murali-2019-Full-stack, real-system quantum co.pdf
+docs/Zhan-2025-A Full Stack Framework for High Perf.pdf
+src/ftqre/__init__.py
+src/ftqre/_version.py
+src/ftqre.egg-info/PKG-INFO
+src/ftqre.egg-info/SOURCES.txt
+src/ftqre.egg-info/dependency_links.txt
+src/ftqre.egg-info/entry_points.txt
+src/ftqre.egg-info/requires.txt
+src/ftqre.egg-info/top_level.txt
+src/ftqre/backends/__init__.py
+src/ftqre/backends/base.py
+src/ftqre/backends/mock.py
+src/ftqre/backends/azure/__init__.py
+src/ftqre/backends/qualtran/__init__.py
+src/ftqre/cli/__init__.py
+src/ftqre/cli/catalog.py
+src/ftqre/cli/estimate.py
+src/ftqre/cli/main.py
+src/ftqre/core/__init__.py
+src/ftqre/core/algorithm.py
+src/ftqre/core/error_budget.py
+src/ftqre/core/hardware.py
+src/ftqre/core/qec.py
+src/ftqre/core/results.py
+src/ftqre/core/types.py
+src/ftqre/exploration/__init__.py
+src/ftqre/io/__init__.py
+src/ftqre/plugins/__init__.py
+src/ftqre/templates/__init__.py
+src/ftqre/templates/base.py
+src/ftqre/templates/registry.py
+src/ftqre/templates/shor.py
+src/ftqre/viz/__init__.py
+src/ftqre/viz/summary.py
