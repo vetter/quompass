@@ -23,6 +23,7 @@ class DesignPoint:
     error_budget: float
     estimate: Optional[PhysicalEstimate]  # None if estimation failed
     error_message: Optional[str] = None
+    error_budget_splits: Optional[tuple[float, float, float]] = None  # (logical, distillation, rotation) ratios
 
     @property
     def succeeded(self) -> bool:

@@ -32,8 +32,11 @@ dependencies = [
 [project.optional-dependencies]
 qualtran = ["qualtran>=0.4"]
 azure = ["qsharp>=1.0"]
+pyliqtr = ["pyLIQTR>=0.3"]
+mqt = ["mqt.core>=2.0"]
 viz = ["matplotlib>=3.7", "plotly>=5.15"]
-all = ["ftqre[qualtran,azure,viz]"]
+optimize = ["pymoo>=0.6"]
+all = ["ftqre[qualtran,azure,viz,optimize]"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -47,10 +50,12 @@ ftqre = "ftqre.cli.main:app"
 [project.entry-points."ftqre.logical_estimators"]
 mock = "ftqre.backends.mock:MockLogicalEstimator"
 qualtran = "ftqre.backends.qualtran.adapter:QualtranLogicalEstimator"
+pyliqtr = "ftqre.backends.pyliqtr.adapter:PyLIQTRLogicalEstimator"
 
 [project.entry-points."ftqre.physical_estimators"]
 analytical = "ftqre.backends.mock:AnalyticalPhysicalEstimator"
 azure = "ftqre.backends.azure.adapter:AzurePhysicalEstimator"
+mqt = "ftqre.backends.mqt.adapter:MQTPhysicalEstimator"
 
 [project.entry-points."ftqre.qec_schemes"]
 surface_code = "ftqre.core.qec:SurfaceCode"
@@ -71,6 +76,7 @@ where = ["src"]
 testpaths = ["tests"]
 markers = [
     "integration: marks tests requiring real backend packages",
+    "optimize: marks tests requiring pymoo",
 ]
 
 [tool.ruff]

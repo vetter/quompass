@@ -5,8 +5,8 @@ Discovers logical and physical estimator backends from:
 2. Installed plugins via ``importlib.metadata.entry_points``
 
 Priority order for "auto" selection:
-- Logical: qualtran > mock
-- Physical: azure > analytical
+- Logical: qualtran > pyliqtr > mock
+- Physical: azure > mqt > analytical
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Priority order: first available wins for "auto" selection
-_LOGICAL_PRIORITY = ["qualtran", "mock"]
-_PHYSICAL_PRIORITY = ["azure", "analytical"]
+_LOGICAL_PRIORITY = ["qualtran", "pyliqtr", "mock"]
+_PHYSICAL_PRIORITY = ["azure", "mqt", "analytical"]
 
 
 def discover_logical_estimators() -> dict[str, LogicalEstimator]:

@@ -12,6 +12,11 @@
   - [Pareto Front](#pareto-front)
   - [Sensitivity Analysis](#sensitivity-analysis)
   - [Plotting](#plotting)
+- [Multi-Objective Optimization](#multi-objective-optimization)
+  - [When to Use Optimize vs Explore](#when-to-use-optimize-vs-explore)
+  - [OptimizationSpace](#optimizationspace)
+  - [Running Optimization](#running-optimization)
+  - [Interpreting Results](#interpreting-results)
 - [Custom QEC Schemes](#custom-qec-schemes)
 - [YAML Workflows](#yaml-workflows)
   - [Algorithm Spec YAML](#algorithm-spec-yaml)
@@ -369,6 +374,93 @@ sens.plot(save_path="sensitivity.png")
 
 ---
 
+## Multi-Objective Optimization
+
+Use NSGA-II genetic algorithm optimization for continuous design space exploration, powered by [pymoo](https://pymoo.org/).
+
+### When to Use Optimize vs Explore
+
+| Feature | `ftqre explore` (Grid) | `ftqre optimize` (NSGA-II) |
+|---------|----------------------|---------------------------|
+| Error budget | Discrete values | Continuous range |
+| Budget splits | Default (uniform) | Optimized (logical/distillation/rotation) |
+| Coverage | Exhaustive | Heuristic (evolutionary) |
+| Speed | Fast for small grids | Better for large spaces |
+| Use case | Quick comparison | Fine-tuning, large sweeps |
+
+Use **explore** when you want exhaustive comparison of a few discrete configurations. Use **optimize** when you want to find the best error budget within a continuous range, or when the space is too large for grid search.
+
+### OptimizationSpace
+
+Define the search space with continuous ranges and categorical choices:
+
+```python
+from ftqre.templates.shor import shor
+from ftqre.optimization import OptimizationSpace, optimize
+
+space = OptimizationSpace(
+    algorithm=shor(n_bits=2048),
+    hardware=["gate_ns_e3", "gate_ns_e4", "gate_us_e3"],
+    qec=["surface_code", "color_code"],
+    error_budget_range=(1e-4, 0.1),   # continuous range
+    objectives={
+        "total_physical_qubits": "minimize",
+        "runtime_seconds": "minimize",
+    },
+)
+```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `algorithm` | AlgorithmSpec | required | Algorithm to optimize |
+| `hardware` | list[str] | `["gate_ns_e3"]` | Hardware choices (categorical) |
+| `qec` | list[str] | `["surface_code"]` | QEC choices (categorical) |
+| `error_budget_range` | tuple[float, float] | `(1e-4, 0.1)` | Continuous error budget range |
+| `objectives` | dict[str, str] | qubits + runtime | Metrics to optimize |
+
+### Running Optimization
+
+```python
+result = optimize(
+    space,
+    generations=50,        # NSGA-II generations
+    population_size=100,   # individuals per generation
+    seed=42,               # reproducibility
+)
+```
+
+The optimizer explores:
+- **Error budget total** continuously within the specified range
+- **Error budget splits** (logical/distillation/rotation ratios) as continuous variables
+- **Hardware** and **QEC** as categorical choices
+
+### Interpreting Results
+
+`OptimizationResult` provides the same API as `ExplorationResult`:
+
+```python
+# Pareto front
+front = result.pareto_front()
+front.print_table()
+
+# Best single point
+best = result.best(metric="total_physical_qubits")
+
+# All successful points
+for pt in result.succeeded:
+    print(f"{pt.label()}: {pt.total_physical_qubits:,.0f} qubits")
+
+# Convert to ExplorationResult for existing viz tools
+er = result.to_exploration_result()
+er.plot(save_path="optimization.png")
+```
+
+**Requires:** `pip install 'ftqre[optimize]'` (installs pymoo).
+
+---
+
 ## Custom QEC Schemes
 
 Use `FormulaQEC` to define QEC schemes via formula strings, without writing Python classes:
@@ -657,6 +749,53 @@ ftqre explore --template grover --param search_space_bits=30 \
     --plot exploration.png
 ```
 
+### ftqre optimize
+
+Run NSGA-II multi-objective optimization across the design space.
+
+```
+ftqre optimize [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--template` | (required) | Algorithm template name |
+| `--param KEY=VALUE` | | Template parameters (repeatable) |
+| `--hardware` | `gate_ns_e3,gate_ns_e4` | Comma-separated hardware presets |
+| `--qec` | `surface_code` | Comma-separated QEC schemes |
+| `--error-budget-min` | `0.0001` | Min error budget (continuous range) |
+| `--error-budget-max` | `0.1` | Max error budget (continuous range) |
+| `--objective` | qubits + runtime | Objectives as `metric:direction` (repeatable) |
+| `--generations` | `50` | NSGA-II generations |
+| `--population-size` | `100` | Population size per generation |
+| `--seed` | | Random seed for reproducibility |
+| `--output` | `table` | `table`, `pareto`, `json`, `yaml` |
+| `--plot` | | Save plot to file path |
+
+**Examples:**
+
+```bash
+# Basic optimization
+ftqre optimize --template shor --param n_bits=2048 \
+    --hardware gate_ns_e3,gate_ns_e4 --qec surface_code \
+    --generations 50 --population-size 100
+
+# Quick test run
+ftqre optimize --template shor --param n_bits=64 \
+    --hardware gate_ns_e3,gate_ns_e4 --qec surface_code \
+    --generations 5 --population-size 10
+
+# Pareto front output with reproducibility
+ftqre optimize --template shor --param n_bits=2048 \
+    --hardware gate_ns_e3,gate_ns_e4 --qec surface_code,color_code \
+    --output pareto --seed 42
+
+# Custom objectives
+ftqre optimize --template chemistry --param num_orbitals=54 \
+    --objective space_time_volume:minimize \
+    --generations 30
+```
+
 ### ftqre catalog
 
 List available templates, hardware presets, QEC schemes, and backends.
@@ -730,6 +869,17 @@ my_backend = "my_package.backend:MyLogicalEstimator"
 [project.entry-points."ftqre.physical_estimators"]
 my_physical = "my_package.backend:MyPhysicalEstimator"
 ```
+
+### Registered Backend Stubs
+
+ftqre includes stub adapters for backends that are not yet fully implemented but are registered for future use:
+
+| Backend | Type | Entry Point | Status |
+|---------|------|-------------|--------|
+| **pyLIQTR** | Logical estimator | `ftqre.logical_estimators` | Stub (install pyLIQTR to enable) |
+| **MQT** | Physical estimator | `ftqre.physical_estimators` | Stub (install mqt.core to enable) |
+
+These stubs appear in `ftqre catalog backends` as "(unavailable)". When the underlying package is installed, they will be discovered automatically. Community contributions to implement the adapter logic are welcome.
 
 ### Adding a Custom QEC Scheme
 
