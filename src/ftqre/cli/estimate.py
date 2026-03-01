@@ -21,12 +21,14 @@ def estimate_cmd(
         [], help="Template parameters as key=value (repeatable)"
     ),
     hardware: str = typer.Option(
-        "gate_ns_e3", help="Hardware preset name or YAML path"
+        "gate_ns_e3", help="Hardware preset name or YAML file path (.yaml/.yml)"
     ),
-    qec: str = typer.Option("surface_code", help="QEC scheme name"),
+    qec: str = typer.Option(
+        "surface_code", help="QEC scheme name or YAML file path (.yaml/.yml)"
+    ),
     error_budget: float = typer.Option(0.001, help="Total error budget"),
     output: str = typer.Option(
-        "table", help="Output format: table, json, detail"
+        "table", help="Output format: table, json, yaml, detail"
     ),
 ) -> None:
     """Estimate physical resources for a quantum algorithm."""
@@ -51,12 +53,26 @@ def estimate_cmd(
         )
         raise typer.Exit(1)
 
+    # Resolve hardware: YAML file or preset name
+    hw_arg: ftqre.HardwareModel | str = hardware
+    if hardware.endswith((".yaml", ".yml")):
+        from ftqre.io import load_hardware
+
+        hw_arg = load_hardware(hardware)
+
+    # Resolve QEC: YAML file or scheme name
+    qec_arg: ftqre.QECScheme | str = qec
+    if qec.endswith((".yaml", ".yml")):
+        from ftqre.io import load_qec
+
+        qec_arg = load_qec(qec)
+
     # Run estimation
     try:
         result = ftqre.estimate(
             algorithm,
-            hardware=hardware,
-            qec=qec,
+            hardware=hw_arg,
+            qec=qec_arg,
             error_budget=error_budget,
         )
     except ValueError as e:
@@ -68,6 +84,10 @@ def estimate_cmd(
         import json
 
         console.print_json(json.dumps(result.summary_dict(), indent=2, default=str))
+    elif output == "yaml":
+        import yaml
+
+        console.print(yaml.dump(result.to_dict(), default_flow_style=False, sort_keys=False))
     elif output == "detail":
         print_estimate_detail(result, console)
     else:

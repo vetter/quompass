@@ -13,6 +13,11 @@
   - [Sensitivity Analysis](#sensitivity-analysis)
   - [Plotting](#plotting)
 - [Custom QEC Schemes](#custom-qec-schemes)
+- [YAML Workflows](#yaml-workflows)
+  - [Algorithm Spec YAML](#algorithm-spec-yaml)
+  - [Custom Hardware YAML](#custom-hardware-yaml)
+  - [Custom QEC YAML](#custom-qec-yaml)
+  - [Exporting Results](#exporting-results)
 - [CLI Reference](#cli-reference)
   - [ftqre estimate](#ftqre-estimate)
   - [ftqre explore](#ftqre-explore)
@@ -426,6 +431,143 @@ cc = color_code()  # 6.6.6 color code with threshold 0.0077, ~4.5*d^2 qubits
 
 ---
 
+## YAML Workflows
+
+ftqre supports YAML files for algorithm specs, hardware models, QEC schemes, and result export. This enables reproducible workflows, version-controlled configurations, and easy sharing.
+
+### Algorithm Spec YAML
+
+Define an algorithm spec in YAML and pass it to `ftqre estimate --spec`:
+
+```yaml
+# shor_2048.yaml
+name: "Shor's factoring (n=2048, Gidney-Ekera)"
+description: "Factor a 2048-bit integer"
+algorithm_family: cryptanalysis
+source: template:shor
+
+problem_parameters:
+  n_bits: 2048
+  construction: gidney_ekera
+
+logical_counts:
+  num_qubits: 4141
+  t_count: 12
+  rotation_count: 12
+  rotation_depth: 12
+  ccz_count: 2576980377
+  measurement_count: 4096
+  clifford_count: 0
+```
+
+```bash
+ftqre estimate --spec shor_2048.yaml
+```
+
+**Python API:**
+
+```python
+from ftqre.io import load_algorithm, save_yaml
+
+# Load
+spec = load_algorithm("shor_2048.yaml")
+
+# Save
+save_yaml(spec.to_dict(), "output_spec.yaml")
+```
+
+### Custom Hardware YAML
+
+Define custom qubit parameters in YAML and pass via `--hardware`:
+
+```yaml
+# custom_hardware.yaml
+name: next_gen_sc
+description: "Next-gen superconducting"
+
+qubit_params:
+  name: next_gen_sc
+  instruction_set: gate_based     # or "majorana"
+  one_qubit_gate_time: 25.0e-9
+  two_qubit_gate_time: 40.0e-9
+  one_qubit_measurement_time: 80.0e-9
+  t_gate_time: 40.0e-9
+  one_qubit_gate_error_rate: 1.0e-5
+  two_qubit_gate_error_rate: 1.0e-5
+  one_qubit_measurement_error_rate: 1.0e-5
+  t_gate_error_rate: 1.0e-5
+```
+
+```bash
+ftqre estimate --template shor --param n_bits=2048 --hardware custom_hardware.yaml
+```
+
+**Python API:**
+
+```python
+from ftqre.io import load_hardware
+
+hw = load_hardware("custom_hardware.yaml")
+result = ftqre.estimate(spec, hardware=hw)
+```
+
+### Custom QEC YAML
+
+Define a FormulaQEC scheme in YAML and pass via `--qec`:
+
+```yaml
+# custom_qec.yaml
+name: example_qldpc
+threshold: 0.01
+prefactor: 0.03
+qubits_formula: "12 * d"
+cycle_time_formula: "6 * t_2q * d"
+distance_coefficient_power: 0.0
+```
+
+```bash
+ftqre estimate --template shor --param n_bits=2048 --qec custom_qec.yaml
+```
+
+**Python API:**
+
+```python
+from ftqre.io import load_qec
+
+qec = load_qec("custom_qec.yaml")
+result = ftqre.estimate(spec, qec=qec)
+```
+
+### Exporting Results
+
+Export estimation results as YAML using `--output yaml` or the Python API:
+
+```bash
+# CLI: export as YAML
+ftqre estimate --template shor --param n_bits=2048 --output yaml > result.yaml
+
+# Exploration results
+ftqre explore --template shor --param n_bits=512 --hardware gate_ns_e3,gate_ns_e4 --output yaml
+```
+
+**Python API:**
+
+```python
+from ftqre.io import save_estimate, save_yaml
+
+result = ftqre.estimate(spec)
+
+# Full nested result
+save_estimate(result, "result.yaml")
+
+# Or save the summary dict
+save_yaml(result.summary_dict(), "summary.yaml")
+```
+
+The exported YAML includes nested sections for summary, breakdown, logical qubit, T factory, error budget, error rates, and provenance (algorithm spec, hardware model, QEC scheme).
+
+---
+
 ## CLI Reference
 
 ### ftqre estimate
@@ -441,10 +583,10 @@ ftqre estimate [OPTIONS]
 | `--template` | | Algorithm template name |
 | `--spec` | | Path to YAML algorithm spec file |
 | `--param KEY=VALUE` | | Template parameters (repeatable) |
-| `--hardware` | `gate_ns_e3` | Hardware preset name |
-| `--qec` | `surface_code` | QEC scheme name |
+| `--hardware` | `gate_ns_e3` | Hardware preset name or YAML file path (`.yaml`/`.yml`) |
+| `--qec` | `surface_code` | QEC scheme name or YAML file path (`.yaml`/`.yml`) |
 | `--error-budget` | `0.001` | Total error budget |
-| `--output` | `table` | Output format: `table`, `json`, `detail` |
+| `--output` | `table` | Output format: `table`, `json`, `yaml`, `detail` |
 
 **Examples:**
 
@@ -458,6 +600,17 @@ ftqre estimate --template chemistry --param num_orbitals=108 \
 
 # Detailed output
 ftqre estimate --template qpe --param num_qubits=50 --output detail
+
+# YAML output
+ftqre estimate --template shor --param n_bits=2048 --output yaml
+
+# Custom hardware and QEC from YAML files
+ftqre estimate --template shor --param n_bits=2048 \
+    --hardware examples/custom_hardware.yaml \
+    --qec examples/custom_qec.yaml
+
+# Load algorithm spec from YAML
+ftqre estimate --spec examples/shor_2048.yaml --output yaml
 ```
 
 ### ftqre explore
@@ -475,7 +628,7 @@ ftqre explore [OPTIONS]
 | `--hardware` | `gate_ns_e3,gate_us_e3` | Comma-separated hardware presets |
 | `--qec` | `surface_code` | Comma-separated QEC schemes |
 | `--error-budget` | `0.001` | Comma-separated error budgets |
-| `--output` | `table` | `table`, `pareto`, `json`, `detail` |
+| `--output` | `table` | `table`, `pareto`, `json`, `yaml`, `detail` |
 | `--pareto-x` | `total_physical_qubits` | Pareto X-axis metric |
 | `--pareto-y` | `runtime_seconds` | Pareto Y-axis metric |
 | `--plot` | | Save plot to file path |

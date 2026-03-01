@@ -31,6 +31,47 @@ class QubitParams:
     two_qubit_joint_measurement_time: Optional[float] = None
     two_qubit_joint_measurement_error_rate: Optional[float] = None
 
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        d = {
+            "name": self.name,
+            "instruction_set": self.instruction_set.value,
+            "one_qubit_gate_time": self.one_qubit_gate_time,
+            "two_qubit_gate_time": self.two_qubit_gate_time,
+            "one_qubit_measurement_time": self.one_qubit_measurement_time,
+            "t_gate_time": self.t_gate_time,
+            "one_qubit_gate_error_rate": self.one_qubit_gate_error_rate,
+            "two_qubit_gate_error_rate": self.two_qubit_gate_error_rate,
+            "one_qubit_measurement_error_rate": self.one_qubit_measurement_error_rate,
+            "t_gate_error_rate": self.t_gate_error_rate,
+        }
+        if self.idle_error_rate is not None:
+            d["idle_error_rate"] = self.idle_error_rate
+        if self.two_qubit_joint_measurement_time is not None:
+            d["two_qubit_joint_measurement_time"] = self.two_qubit_joint_measurement_time
+        if self.two_qubit_joint_measurement_error_rate is not None:
+            d["two_qubit_joint_measurement_error_rate"] = self.two_qubit_joint_measurement_error_rate
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> QubitParams:
+        """Construct from a dictionary (e.g. loaded from YAML)."""
+        return cls(
+            name=d["name"],
+            instruction_set=InstructionSet(d["instruction_set"]),
+            one_qubit_gate_time=d["one_qubit_gate_time"],
+            two_qubit_gate_time=d["two_qubit_gate_time"],
+            one_qubit_measurement_time=d["one_qubit_measurement_time"],
+            t_gate_time=d["t_gate_time"],
+            one_qubit_gate_error_rate=d["one_qubit_gate_error_rate"],
+            two_qubit_gate_error_rate=d["two_qubit_gate_error_rate"],
+            one_qubit_measurement_error_rate=d["one_qubit_measurement_error_rate"],
+            t_gate_error_rate=d["t_gate_error_rate"],
+            idle_error_rate=d.get("idle_error_rate"),
+            two_qubit_joint_measurement_time=d.get("two_qubit_joint_measurement_time"),
+            two_qubit_joint_measurement_error_rate=d.get("two_qubit_joint_measurement_error_rate"),
+        )
+
     @property
     def worst_case_clifford_error(self) -> float:
         """p = max(measurement, 1q gate, 2q gate) per Azure QRE convention."""
@@ -51,6 +92,23 @@ class HardwareModel:
     name: str
     qubit_params: QubitParams
     description: str = ""
+
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        return {
+            "name": self.name,
+            "qubit_params": self.qubit_params.to_dict(),
+            "description": self.description,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> HardwareModel:
+        """Construct from a dictionary (e.g. loaded from YAML)."""
+        return cls(
+            name=d["name"],
+            qubit_params=QubitParams.from_dict(d["qubit_params"]),
+            description=d.get("description", ""),
+        )
 
     @classmethod
     def from_preset(cls, preset: HardwarePreset | str) -> HardwareModel:

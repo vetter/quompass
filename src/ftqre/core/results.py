@@ -24,6 +24,17 @@ class TFactoryEstimate:
     num_rounds: int
     output_error_rate: float
 
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to dictionary."""
+        return {
+            "num_factories": self.num_factories,
+            "physical_qubits_per_factory": self.physical_qubits_per_factory,
+            "total_physical_qubits": self.total_physical_qubits,
+            "factory_runtime": self.factory_runtime,
+            "num_rounds": self.num_rounds,
+            "output_error_rate": self.output_error_rate,
+        }
+
 
 @dataclass(frozen=True)
 class LogicalQubitEstimate:
@@ -33,6 +44,15 @@ class LogicalQubitEstimate:
     physical_qubits: int
     logical_cycle_time: float  # seconds
     logical_error_rate: float
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to dictionary."""
+        return {
+            "code_distance": self.code_distance,
+            "physical_qubits": self.physical_qubits,
+            "logical_cycle_time": self.logical_cycle_time,
+            "logical_error_rate": self.logical_error_rate,
+        }
 
 
 @dataclass(frozen=True)
@@ -117,4 +137,37 @@ class PhysicalEstimate:
             "space_time_volume": self.space_time_volume,
             "error_budget": self.error_budget.total,
             "backend": self.backend_name,
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Full nested dictionary serialization for YAML/JSON export."""
+        return {
+            "summary": {
+                "total_physical_qubits": self.total_physical_qubits,
+                "runtime_seconds": self.runtime_seconds,
+                "runtime_human": self.runtime_human,
+                "rqops": self.rqops,
+                "space_time_volume": self.space_time_volume,
+            },
+            "breakdown": {
+                "algorithmic_logical_qubits": self.algorithmic_logical_qubits,
+                "physical_qubits_for_algorithm": self.physical_qubits_for_algorithm,
+                "physical_qubits_for_t_factories": self.physical_qubits_for_t_factories,
+                "algorithmic_logical_depth": self.algorithmic_logical_depth,
+                "num_t_states": self.num_t_states,
+                "clock_frequency": self.clock_frequency,
+            },
+            "logical_qubit": self.logical_qubit.to_dict(),
+            "t_factory": self.t_factory.to_dict() if self.t_factory else None,
+            "error_budget": self.error_budget.to_dict(),
+            "error_rates": {
+                "required_logical_error_rate": self.required_logical_error_rate,
+                "required_t_state_error_rate": self.required_t_state_error_rate,
+            },
+            "provenance": {
+                "algorithm": self.algorithm_spec.to_dict(),
+                "hardware": self.hardware_model.to_dict(),
+                "qec_scheme": self.qec_scheme_name,
+                "backend": self.backend_name,
+            },
         }

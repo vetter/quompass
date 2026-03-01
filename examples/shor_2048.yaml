@@ -1,0 +1,26 @@
+# Algorithm spec for Shor's factoring of a 2048-bit integer
+# Using Gidney-Ekera construction (arXiv:1905.09749)
+#
+# Usage:
+#   ftqre estimate --spec examples/shor_2048.yaml
+#   ftqre estimate --spec examples/shor_2048.yaml --output yaml
+
+name: "Shor's factoring (n=2048, Gidney-Ekera)"
+description: >
+  Factor a 2048-bit integer using the Gidney-Ekera
+  construction with windowed arithmetic.
+algorithm_family: cryptanalysis
+source: template:shor
+
+problem_parameters:
+  n_bits: 2048
+  construction: gidney_ekera
+
+logical_counts:
+  num_qubits: 4141       # 2*2048 + ceil(sqrt(2048))
+  t_count: 12
+  rotation_count: 12
+  rotation_depth: 12
+  ccz_count: 2576980377  # 0.3 * 2048^3
+  measurement_count: 4096
+  clifford_count: 0

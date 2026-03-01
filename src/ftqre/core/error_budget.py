@@ -15,6 +15,25 @@ class ErrorBudgetBreakdown:
     distillation: float
     rotation: float
 
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        return {
+            "total": self.total,
+            "logical": self.logical,
+            "distillation": self.distillation,
+            "rotation": self.rotation,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> ErrorBudgetBreakdown:
+        """Construct from a dictionary."""
+        return cls(
+            total=d["total"],
+            logical=d["logical"],
+            distillation=d["distillation"],
+            rotation=d["rotation"],
+        )
+
 
 @dataclass
 class ErrorBudget:
@@ -33,6 +52,27 @@ class ErrorBudget:
     logical: Optional[float] = None
     distillation: Optional[float] = None
     rotation: Optional[float] = None
+
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        d: dict = {"total": self.total}
+        if self.logical is not None:
+            d["logical"] = self.logical
+        if self.distillation is not None:
+            d["distillation"] = self.distillation
+        if self.rotation is not None:
+            d["rotation"] = self.rotation
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> ErrorBudget:
+        """Construct from a dictionary."""
+        return cls(
+            total=d.get("total", 0.001),
+            logical=d.get("logical"),
+            distillation=d.get("distillation"),
+            rotation=d.get("rotation"),
+        )
 
     def resolve(self, has_rotations: bool = True) -> ErrorBudgetBreakdown:
         """Compute the actual split, defaulting to uniform."""

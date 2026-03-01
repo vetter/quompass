@@ -1,0 +1,22 @@
+# Custom QEC scheme definition (FormulaQEC)
+# Defines a hypothetical qLDPC code with linear qubit overhead
+#
+# Usage:
+#   ftqre estimate --template shor --param n_bits=2048 \
+#       --qec examples/custom_qec.yaml
+#
+# Formula variables:
+#   d     - code distance
+#   t_1q  - one-qubit gate time (seconds)
+#   t_2q  - two-qubit gate time (seconds)
+#   t_meas - measurement time (seconds)
+#   t_jm  - joint measurement time (seconds, 0 if N/A)
+#
+# Supported functions: ceil, floor, round, sqrt, log, log2, abs, max, min
+
+name: example_qldpc
+threshold: 0.01
+prefactor: 0.03
+qubits_formula: "12 * d"
+cycle_time_formula: "6 * t_2q * d"
+distance_coefficient_power: 0.0

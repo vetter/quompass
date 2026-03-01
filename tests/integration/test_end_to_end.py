@@ -4,6 +4,7 @@ import ftqre
 from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
 from ftqre.core.qec import color_code
 from ftqre.templates.shor import shor
+from ftqre.io import load_algorithm, save_estimate, save_yaml
 
 
 class TestEndToEnd:
@@ -57,3 +58,26 @@ class TestEndToEnd:
         r_ion = ftqre.estimate(spec, hardware="gate_us_e3")
         # Trapped ion has slower gates, so runtime should be longer
         assert r_ion.runtime_seconds > r_sc.runtime_seconds
+
+    def test_yaml_round_trip(self, tmp_path):
+        """Estimate -> save YAML -> load spec -> re-estimate -> compare."""
+        spec = shor(n_bits=64)
+        result1 = ftqre.estimate(spec)
+
+        # Save spec as YAML, reload, re-estimate
+        spec_path = tmp_path / "spec.yaml"
+        save_yaml(spec.to_dict(), spec_path)
+        loaded_spec = load_algorithm(spec_path)
+        result2 = ftqre.estimate(loaded_spec)
+
+        assert result2.total_physical_qubits == result1.total_physical_qubits
+        assert result2.runtime_seconds == result1.runtime_seconds
+
+        # Save result as YAML and verify it loads
+        result_path = tmp_path / "result.yaml"
+        save_estimate(result1, result_path)
+        import yaml
+
+        with open(result_path) as f:
+            data = yaml.safe_load(f)
+        assert data["summary"]["total_physical_qubits"] == result1.total_physical_qubits

@@ -32,7 +32,7 @@ def explore_cmd(
     ),
     output: str = typer.Option(
         "table",
-        help="Output format: table, pareto, json, detail",
+        help="Output format: table, pareto, json, yaml, detail",
     ),
     pareto_x: str = typer.Option(
         "total_physical_qubits",
@@ -103,6 +103,12 @@ def explore_cmd(
         for pt in result.succeeded:
             rows.append(pt.estimate.summary_dict())
         console.print_json(json.dumps(rows, indent=2, default=str))
+
+    elif output == "yaml":
+        import yaml
+
+        rows = [pt.estimate.summary_dict() for pt in result.succeeded]
+        console.print(yaml.dump(rows, default_flow_style=False, sort_keys=False))
 
     elif output == "pareto":
         front = result.pareto_front(

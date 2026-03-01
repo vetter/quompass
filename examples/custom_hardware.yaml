@@ -1,0 +1,21 @@
+# Custom hardware model definition
+# Defines a hypothetical next-generation superconducting chip
+#
+# Usage:
+#   ftqre estimate --template shor --param n_bits=2048 \
+#       --hardware examples/custom_hardware.yaml
+
+name: next_gen_sc
+description: "Hypothetical next-gen superconducting with 1e-5 error rates"
+
+qubit_params:
+  name: next_gen_sc
+  instruction_set: gate_based
+  one_qubit_gate_time: 25.0e-9      # 25 ns
+  two_qubit_gate_time: 40.0e-9      # 40 ns
+  one_qubit_measurement_time: 80.0e-9  # 80 ns
+  t_gate_time: 40.0e-9              # 40 ns
+  one_qubit_gate_error_rate: 1.0e-5
+  two_qubit_gate_error_rate: 1.0e-5
+  one_qubit_measurement_error_rate: 1.0e-5
+  t_gate_error_rate: 1.0e-5
