@@ -12,8 +12,11 @@ console = Console()
 
 
 def optimize_cmd(
-    template: str = typer.Option(
-        ..., help="Algorithm template name (e.g. 'shor')"
+    template: Optional[str] = typer.Option(
+        None, help="Algorithm template name (e.g. 'shor')"
+    ),
+    spec: Optional[str] = typer.Option(
+        None, help="Path to algorithm spec YAML file"
     ),
     param: list[str] = typer.Option(
         [], help="Template parameters as key=value (repeatable)"
@@ -57,14 +60,27 @@ def optimize_cmd(
     ),
 ) -> None:
     """Run NSGA-II multi-objective optimization across the design space."""
+    import ftqre as ftqre_mod
     from ftqre.cli.estimate import _parse_params
     from ftqre.optimization import OptimizationSpace, optimize
     from ftqre.templates.registry import get_template
 
-    # Build algorithm spec from template
-    tmpl = get_template(template)
-    params = _parse_params(param, tmpl.parameter_schema())
-    algorithm = tmpl.generate(**params)
+    # Build algorithm spec from template or YAML
+    if template:
+        tmpl = get_template(template)
+        params = _parse_params(param, tmpl.parameter_schema())
+        algorithm = tmpl.generate(**params)
+    elif spec:
+        import yaml
+
+        with open(spec) as f:
+            data = yaml.safe_load(f)
+        algorithm = ftqre_mod.AlgorithmSpec.from_dict(data)
+    else:
+        console.print(
+            "[red]Error:[/red] Provide either --template or --spec", style="bold"
+        )
+        raise typer.Exit(1)
 
     # Parse comma-separated lists
     hw_list = [h.strip() for h in hardware.split(",")]

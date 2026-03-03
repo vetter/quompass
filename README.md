@@ -100,10 +100,16 @@ ftqre explore --template shor --param n_bits=2048 \
     --error-budget 0.01,0.001 \
     --sensitivity
 
-# List available templates, hardware, QEC schemes
+# Optimize design space with NSGA-II
+ftqre optimize --template shor --param n_bits=2048 \
+    --hardware gate_ns_e3,gate_ns_e4 --qec surface_code \
+    --generations 50 --output pareto
+
+# List available templates, hardware, QEC schemes, backends
 ftqre catalog templates
 ftqre catalog hardware
 ftqre catalog qec
+ftqre catalog backends
 ```
 
 ## Available Templates

@@ -31,6 +31,12 @@ uv run pytest --cov=ftqre --cov-report=html
 # Lint and type check
 uv run ruff check src/ tests/
 uv run mypy src/ftqre/
+
+# CLI (after install)
+ftqre estimate --template shor --param n_bits=2048
+ftqre explore --template shor --param n_bits=2048 --hardware gate_ns_e3,gate_ns_e4 --qec surface_code
+ftqre optimize --template shor --param n_bits=2048
+ftqre catalog templates|hardware|qec
 ```
 
 ## Architecture
@@ -41,42 +47,41 @@ AlgorithmSpec -> LogicalEstimator -> LogicalCounts -> PhysicalEstimator -> Physi
   (template)      (Qualtran/mock)    (PORTABLE)       (Azure/analytical)    (result)
 ```
 
-**LogicalCounts** (`core/algorithm.py`) is the portable interchange format — a frozen dataclass with `num_qubits`, `t_count`, `ccz_count`, `rotation_count`, etc. Everything upstream produces it; everything downstream consumes it.
+**LogicalCounts** (`core/algorithm.py`) is the portable interchange format — a frozen dataclass with `num_qubits`, `t_count`, `ccz_count`, `rotation_count`, etc. Everything upstream produces it; everything downstream consumes it. `total_t_equivalent` property converts CCZ (×4) and rotations into T-gate equivalents.
+
+**Primary entry point:** `ftqre.estimate()` in `__init__.py`. Handles type coercion (strings → enums/models), backend auto-selection via registry, and runs the full pipeline. This is the main API for both library and CLI use.
 
 **Key modules under `src/ftqre/`:**
 
-- `core/` — Domain types: `AlgorithmSpec`, `LogicalCounts`, `QECScheme` (ABC), `HardwareModel`, `PhysicalEstimate`, `ErrorBudget`. All result types are frozen dataclasses.
-- `backends/` — `LogicalEstimator` and `PhysicalEstimator` ABCs in `base.py`. Mock/analytical backends in `mock.py`. Real backends (qualtran/, azure/) use lazy imports and adapter pattern.
-- `backends/registry.py` — Plugin discovery via `importlib.metadata.entry_points`. Four groups: `ftqre.logical_estimators`, `ftqre.physical_estimators`, `ftqre.qec_schemes`, `ftqre.algorithm_templates`.
+- `core/` — Domain types: `AlgorithmSpec`, `LogicalCounts`, `QECScheme` (ABC), `HardwareModel`, `QubitParams`, `PhysicalEstimate`, `ErrorBudget`. All result types are frozen dataclasses. `HardwarePreset` enum + `HardwareModel.from_preset()` for built-in hardware targets.
+- `backends/` — `LogicalEstimator` and `PhysicalEstimator` ABCs in `base.py`. Both require `name`, `estimate()`, and `is_available()`. Mock/analytical backends in `mock.py`. Real backends (qualtran/, azure/, pyliqtr/, mqt/) use lazy imports and adapter pattern.
+- `backends/registry.py` — Plugin discovery via `importlib.metadata.entry_points`. Auto-selection priority: logical = qualtran > pyliqtr > mock; physical = azure > mqt > analytical. Four entry-point groups: `ftqre.logical_estimators`, `ftqre.physical_estimators`, `ftqre.qec_schemes`, `ftqre.algorithm_templates`.
+- `core/qec.py` — `QECScheme` ABC with `logical_error_rate()`, `physical_qubits_per_logical()`, `logical_cycle_time()`, `min_code_distance()`. `FormulaQEC` enables YAML-defined codes via AST-safe formula evaluation (never `eval()`). Built-in: `SurfaceCode`, `FloquetCode`, `color_code()`.
 - `templates/` — Algorithm templates (Shor, QPE, chemistry, Hamiltonian sim, Grover). Each has a `generate(**params) -> AlgorithmSpec` method and a convenience function.
 - `exploration/` — Design space grid search (`ExplorationSpace` + `explore()`), Pareto front extraction, sensitivity analysis (OFAT).
 - `optimization/` — NSGA-II multi-objective optimization via pymoo.
 - `cli/` — Typer app with `estimate`, `explore`, `optimize`, `catalog` subcommands.
 - `io/` — YAML load/save for algorithm specs, hardware models, QEC schemes, and results.
 
-**Entry point:** `ftqre.estimate()` in `__init__.py` is the primary API. It handles type coercion (strings → enums/models), backend auto-selection, and runs the full pipeline.
-
 ## Design Conventions
 
-- **QEC is pluggable** — `QECScheme` ABC + `FormulaQEC` for YAML-defined codes (AST-based safe formula eval, no `eval()`). Surface code, Floquet, and color code are built in.
-- **Backend isolation** — Heavy dependencies (qualtran, qsharp, pymoo) are lazy-imported. Backends must implement `is_available() -> bool`. Mock backends have zero external deps and are used in all unit tests.
-- **Plugin architecture** — Backends, QEC schemes, and templates are discovered via `entry_points` in `pyproject.toml`. New ones can be added by third-party packages.
-- **YAML workflows** — CLI accepts `--hardware path.yaml` and `--qec path.yaml` alongside preset names. See `examples/` for YAML format.
-- **Hardware presets** — `HardwarePreset` enum in `core/types.py` maps to `QubitParams` via `HardwareModel.from_preset()`. Presets: `gate_ns_e3`, `gate_ns_e4`, `gate_us_e3`, `gate_us_e4`, `maj_ns_e4`, `maj_ns_e6`.
+- **QEC is pluggable** — `QECScheme` ABC + `FormulaQEC` for YAML-defined codes. `_safe_eval()` uses AST walking with whitelisted operators and math functions (ceil, sqrt, log, etc.). Formula variables: `d` for distance, `t_1q`/`t_2q`/`t_meas`/`t_jm` for cycle time.
+- **Backend isolation** — Heavy dependencies (qualtran, qsharp, pymoo, pyLIQTR, mqt) are lazy-imported. Backends must implement `is_available() -> bool`. Mock backends have zero external deps and are used in all unit tests.
+- **Plugin architecture** — Backends, QEC schemes, and templates are discovered via `entry_points` in `pyproject.toml`. New ones can be added by third-party packages without modifying this repo.
+- **Frozen dataclasses** — All result/interchange types (`LogicalCounts`, `PhysicalEstimate`, `LogicalQubitEstimate`, `TFactoryEstimate`, `ErrorBudgetBreakdown`) are frozen. `AlgorithmSpec` is mutable (has `problem_parameters` dict).
+- **YAML workflows** — CLI accepts `--hardware path.yaml` and `--qec path.yaml` alongside preset names. `io/` module provides `load_algorithm()`, `load_hardware()`, `load_qec()`, `save_estimate()`.
+- **Hardware presets** — `HardwarePreset` enum maps to `QubitParams` via `HardwareModel.from_preset()`. Six presets: `gate_ns_e3`, `gate_ns_e4`, `gate_us_e3`, `gate_us_e4`, `maj_ns_e4`, `maj_ns_e6`.
 
 ## Testing Patterns
 
-- Unit tests use `MockLogicalEstimator` and `AnalyticalPhysicalEstimator` — no real backends needed.
-- Integration tests are marked with `@pytest.mark.integration` and conditionally skip if backends are unavailable.
-- Optimization tests are marked with `@pytest.mark.optimize` and require pymoo.
-- `tests/integration/conftest.py` has shared fixtures.
+- Unit tests use `MockLogicalEstimator` (passthrough) and `AnalyticalPhysicalEstimator` (formula-based) — no real backends needed.
+- Integration tests: `@pytest.mark.integration`, conditionally skip if backends unavailable. Fixtures in `tests/integration/conftest.py`.
+- Optimization tests: `@pytest.mark.optimize`, require pymoo.
+- All core types have `to_dict()`/`from_dict()` round-trip serialization tested in `test_serialization.py` and `test_io.py`.
 
 ## Configuration
 
 - **ruff**: line-length 100, target Python 3.10
 - **mypy**: Python 3.10, `warn_return_any = true`
-- **pytest**: testpaths = `["tests"]`
-
-## Project Status
-
-Phases 1-4 complete (core types, backends, exploration, YAML/docs). Phase 5 (NSGA-II optimization, pyLIQTR/MQT real integration) is in progress — `optimization/` module and pyLIQTR/MQT stubs exist but real backend adapters are not yet wired up.
+- **pytest**: testpaths = `["tests"]`, custom markers: `integration`, `optimize`
+- **Python**: requires >= 3.10, runtime deps: numpy, typer, rich, pyyaml

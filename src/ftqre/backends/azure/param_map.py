@@ -8,6 +8,7 @@ All qsharp imports are lazy.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -93,24 +94,30 @@ def _map_qec_scheme(qec: QECScheme) -> dict:
     }
 
     if isinstance(qec, FormulaQEC):
-        # Translate ftqre formula variables to Azure formula variables
+        # Translate ftqre formula variables to Azure formula variables.
+        # Use regex word boundaries to avoid corrupting function names
+        # like "round" or "ード" when replacing "d" with "codeDistance".
+        # Replace longer variable names first to prevent partial matches.
         cycle_formula = qec.cycle_time_formula
-        cycle_formula = cycle_formula.replace("t_2q", "twoQubitGateTime")
-        cycle_formula = cycle_formula.replace("t_1q", "oneQubitGateTime")
-        cycle_formula = cycle_formula.replace("t_meas", "oneQubitMeasurementTime")
-        cycle_formula = cycle_formula.replace("t_jm", "twoQubitJointMeasurementTime")
-        cycle_formula = cycle_formula.replace("d", "codeDistance")
+        cycle_formula = re.sub(r'\bt_meas\b', 'oneQubitMeasurementTime', cycle_formula)
+        cycle_formula = re.sub(r'\bt_2q\b', 'twoQubitGateTime', cycle_formula)
+        cycle_formula = re.sub(r'\bt_1q\b', 'oneQubitGateTime', cycle_formula)
+        cycle_formula = re.sub(r'\bt_jm\b', 'twoQubitJointMeasurementTime', cycle_formula)
+        cycle_formula = re.sub(r'\bd\b', 'codeDistance', cycle_formula)
         result["logicalCycleTime"] = cycle_formula
 
         qubits_formula = qec.qubits_formula
-        qubits_formula = qubits_formula.replace("d", "codeDistance")
+        qubits_formula = re.sub(r'\bd\b', 'codeDistance', qubits_formula)
         result["physicalQubitsPerLogicalQubit"] = qubits_formula
 
     return result
 
 
-def _map_error_budget(error_budget: ErrorBudget) -> dict:
-    """Map ErrorBudget to Azure errorBudget dict."""
+def _map_error_budget(error_budget: ErrorBudget) -> float:
+    """Map ErrorBudget to Azure errorBudget value.
+
+    Azure QRE accepts a float for the total error budget.
+    """
     return error_budget.total
 
 

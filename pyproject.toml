@@ -36,7 +36,7 @@ pyliqtr = ["pyLIQTR>=0.3"]
 mqt = ["mqt.core>=2.0"]
 viz = ["matplotlib>=3.7", "plotly>=5.15"]
 optimize = ["pymoo>=0.6"]
-all = ["ftqre[qualtran,azure,viz,optimize]"]
+all = ["ftqre[qualtran,azure,pyliqtr,mqt,viz,optimize]"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
