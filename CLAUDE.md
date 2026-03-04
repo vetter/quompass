@@ -26,17 +26,17 @@ uv run pytest tests/integration -v
 uv run pytest -m optimize -v
 
 # Run with coverage
-uv run pytest --cov=ftqre --cov-report=html
+uv run pytest --cov=quompass --cov-report=html
 
 # Lint and type check
 uv run ruff check src/ tests/
-uv run mypy src/ftqre/
+uv run mypy src/quompass/
 
 # CLI (after install)
-ftqre estimate --template shor --param n_bits=2048
-ftqre explore --template shor --param n_bits=2048 --hardware gate_ns_e3,gate_ns_e4 --qec surface_code
-ftqre optimize --template shor --param n_bits=2048
-ftqre catalog templates|hardware|qec
+quompass estimate --template shor --param n_bits=2048
+quompass explore --template shor --param n_bits=2048 --hardware gate_ns_e3,gate_ns_e4 --qec surface_code
+quompass optimize --template shor --param n_bits=2048
+quompass catalog templates|hardware|qec
 ```
 
 ## Architecture
@@ -49,13 +49,13 @@ AlgorithmSpec -> LogicalEstimator -> LogicalCounts -> PhysicalEstimator -> Physi
 
 **LogicalCounts** (`core/algorithm.py`) is the portable interchange format — a frozen dataclass with `num_qubits`, `t_count`, `ccz_count`, `rotation_count`, etc. Everything upstream produces it; everything downstream consumes it. `total_t_equivalent` property converts CCZ (×4) and rotations into T-gate equivalents.
 
-**Primary entry point:** `ftqre.estimate()` in `__init__.py`. Handles type coercion (strings → enums/models), backend auto-selection via registry, and runs the full pipeline. This is the main API for both library and CLI use.
+**Primary entry point:** `quompass.estimate()` in `__init__.py`. Handles type coercion (strings → enums/models), backend auto-selection via registry, and runs the full pipeline. This is the main API for both library and CLI use.
 
-**Key modules under `src/ftqre/`:**
+**Key modules under `src/quompass/`:**
 
 - `core/` — Domain types: `AlgorithmSpec`, `LogicalCounts`, `QECScheme` (ABC), `HardwareModel`, `QubitParams`, `PhysicalEstimate`, `ErrorBudget`. All result types are frozen dataclasses. `HardwarePreset` enum + `HardwareModel.from_preset()` for built-in hardware targets.
 - `backends/` — `LogicalEstimator` and `PhysicalEstimator` ABCs in `base.py`. Both require `name`, `estimate()`, and `is_available()`. Mock/analytical backends in `mock.py`. Real backends (qualtran/, azure/, pyliqtr/, mqt/) use lazy imports and adapter pattern.
-- `backends/registry.py` — Plugin discovery via `importlib.metadata.entry_points`. Auto-selection priority: logical = qualtran > pyliqtr > mock; physical = azure > mqt > analytical. Four entry-point groups: `ftqre.logical_estimators`, `ftqre.physical_estimators`, `ftqre.qec_schemes`, `ftqre.algorithm_templates`.
+- `backends/registry.py` — Plugin discovery via `importlib.metadata.entry_points`. Auto-selection priority: logical = qualtran > pyliqtr > mock; physical = azure > mqt > analytical. Four entry-point groups: `quompass.logical_estimators`, `quompass.physical_estimators`, `quompass.qec_schemes`, `quompass.algorithm_templates`.
 - `core/qec.py` — `QECScheme` ABC with `logical_error_rate()`, `physical_qubits_per_logical()`, `logical_cycle_time()`, `min_code_distance()`. `FormulaQEC` enables YAML-defined codes via AST-safe formula evaluation (never `eval()`). Built-in: `SurfaceCode`, `FloquetCode`, `color_code()`.
 - `templates/` — Algorithm templates (Shor, QPE, chemistry, Hamiltonian sim, Grover). Each has a `generate(**params) -> AlgorithmSpec` method and a convenience function.
 - `exploration/` — Design space grid search (`ExplorationSpace` + `explore()`), Pareto front extraction, sensitivity analysis (OFAT).

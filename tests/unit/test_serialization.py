@@ -1,9 +1,9 @@
 """Tests for serialization (to_dict / from_dict) of core types."""
 
-from ftqre.core.error_budget import ErrorBudget, ErrorBudgetBreakdown
-from ftqre.core.hardware import HardwareModel, QubitParams
-from ftqre.core.results import LogicalQubitEstimate, TFactoryEstimate
-from ftqre.core.types import InstructionSet
+from quompass.core.error_budget import ErrorBudget, ErrorBudgetBreakdown
+from quompass.core.hardware import HardwareModel, QubitParams
+from quompass.core.results import LogicalQubitEstimate, TFactoryEstimate
+from quompass.core.types import InstructionSet
 
 
 class TestQubitParamsSerialization:
@@ -170,11 +170,11 @@ class TestTFactoryEstimateSerialization:
 class TestPhysicalEstimateSerialization:
     def test_to_dict_structure(self):
         """PhysicalEstimate.to_dict() returns expected nested structure."""
-        import ftqre
-        from ftqre.templates.shor import shor
+        import quompass
+        from quompass.templates.shor import shor
 
         spec = shor(n_bits=64)
-        result = ftqre.estimate(spec)
+        result = quompass.estimate(spec)
         d = result.to_dict()
 
         # Top-level keys
@@ -198,13 +198,13 @@ class TestPhysicalEstimateSerialization:
 
     def test_to_dict_no_t_factory(self):
         """PhysicalEstimate with no T factory serializes t_factory as None."""
-        from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
-        import ftqre
+        from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
+        import quompass
 
         spec = AlgorithmSpec(
             name="No T gates",
             logical_counts=LogicalCounts(num_qubits=10, t_count=0, measurement_count=10),
         )
-        result = ftqre.estimate(spec)
+        result = quompass.estimate(spec)
         d = result.to_dict()
         assert d["t_factory"] is None

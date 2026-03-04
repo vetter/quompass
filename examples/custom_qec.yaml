@@ -2,7 +2,7 @@
 # Defines a hypothetical qLDPC code with linear qubit overhead
 #
 # Usage:
-#   ftqre estimate --template shor --param n_bits=2048 \
+#   quompass estimate --template shor --param n_bits=2048 \
 #       --qec examples/custom_qec.yaml
 #
 # Formula variables:

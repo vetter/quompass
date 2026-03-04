@@ -3,7 +3,7 @@
 import pytest
 from typer.testing import CliRunner
 
-from ftqre.cli.main import app
+from quompass.cli.main import app
 
 runner = CliRunner()
 

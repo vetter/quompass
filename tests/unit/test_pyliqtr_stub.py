@@ -2,8 +2,8 @@
 
 import pytest
 
-from ftqre.backends.pyliqtr.adapter import PyLIQTRLogicalEstimator
-from ftqre.backends.registry import discover_logical_estimators, select_backends
+from quompass.backends.pyliqtr.adapter import PyLIQTRLogicalEstimator
+from quompass.backends.registry import discover_logical_estimators, select_backends
 
 
 class TestPyLIQTRStub:

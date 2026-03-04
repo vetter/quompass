@@ -1,15 +1,15 @@
-"""Tests for ftqre.io YAML load/save utilities."""
+"""Tests for quompass.io YAML load/save utilities."""
 
 import yaml
 import pytest
 from pathlib import Path
 
-import ftqre
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
-from ftqre.core.hardware import HardwareModel, QubitParams
-from ftqre.core.qec import FormulaQEC
-from ftqre.core.types import InstructionSet
-from ftqre.io import (
+import quompass
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
+from quompass.core.hardware import HardwareModel, QubitParams
+from quompass.core.qec import FormulaQEC
+from quompass.core.types import InstructionSet
+from quompass.io import (
     load_algorithm,
     load_hardware,
     load_qec,
@@ -132,10 +132,10 @@ class TestLoadQEC:
 
 class TestSaveEstimate:
     def test_save_and_reload(self, tmp_path):
-        from ftqre.templates.shor import shor
+        from quompass.templates.shor import shor
 
         spec = shor(n_bits=64)
-        result = ftqre.estimate(spec)
+        result = quompass.estimate(spec)
 
         path = tmp_path / "result.yaml"
         save_estimate(result, path)

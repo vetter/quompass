@@ -4,15 +4,15 @@ import pytest
 
 pymoo = pytest.importorskip("pymoo", reason="pymoo not installed")
 
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
-from ftqre.optimization.problem import FTQREProblem
-from ftqre.optimization.space import OptimizationSpace
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
+from quompass.optimization.problem import FTQREProblem
+from quompass.optimization.space import OptimizationSpace
 
 
 @pytest.fixture
 def shor_64_spec():
     """Small Shor spec for fast optimization tests."""
-    from ftqre.templates.shor import shor
+    from quompass.templates.shor import shor
     return shor(n_bits=64)
 
 
@@ -137,7 +137,7 @@ class TestFTQREProblem:
 
 class TestOptimize:
     def test_basic_run(self, basic_space):
-        from ftqre.optimization import optimize
+        from quompass.optimization import optimize
 
         result = optimize(
             basic_space,
@@ -148,8 +148,8 @@ class TestOptimize:
         assert len(result.all_points) > 0
 
     def test_produces_design_points(self, basic_space):
-        from ftqre.exploration.space import DesignPoint
-        from ftqre.optimization import optimize
+        from quompass.exploration.space import DesignPoint
+        from quompass.optimization import optimize
 
         result = optimize(
             basic_space,
@@ -161,7 +161,7 @@ class TestOptimize:
             assert isinstance(pt, DesignPoint)
 
     def test_pareto_front_works(self, basic_space):
-        from ftqre.optimization import optimize
+        from quompass.optimization import optimize
 
         result = optimize(
             basic_space,
@@ -173,7 +173,7 @@ class TestOptimize:
         assert len(front) >= 1
 
     def test_progress_callback_fires(self, basic_space):
-        from ftqre.optimization import optimize
+        from quompass.optimization import optimize
 
         calls = []
 
@@ -192,7 +192,7 @@ class TestOptimize:
         assert calls[-1][1] == 5
 
     def test_reproducible_with_seed(self, basic_space):
-        from ftqre.optimization import optimize
+        from quompass.optimization import optimize
 
         r1 = optimize(basic_space, generations=3, population_size=10, seed=123)
         r2 = optimize(basic_space, generations=3, population_size=10, seed=123)
@@ -209,7 +209,7 @@ class TestOptimize:
 
 class TestOptimizationResult:
     def test_succeeded_filter(self, basic_space):
-        from ftqre.optimization import optimize
+        from quompass.optimization import optimize
 
         result = optimize(
             basic_space,
@@ -222,7 +222,7 @@ class TestOptimizationResult:
             assert pt.succeeded
 
     def test_best_point(self, basic_space):
-        from ftqre.optimization import optimize
+        from quompass.optimization import optimize
 
         result = optimize(
             basic_space,
@@ -238,8 +238,8 @@ class TestOptimizationResult:
                 assert best.total_physical_qubits <= pt.total_physical_qubits
 
     def test_to_exploration_result(self, basic_space):
-        from ftqre.exploration.space import ExplorationResult
-        from ftqre.optimization import optimize
+        from quompass.exploration.space import ExplorationResult
+        from quompass.optimization import optimize
 
         result = optimize(
             basic_space,

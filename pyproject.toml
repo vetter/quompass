@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ftqre"
+name = "quompass"
 version = "0.1.0"
 description = "Portable Fault-Tolerant Quantum Resource Estimation"
 readme = "README.md"
@@ -36,7 +36,7 @@ pyliqtr = ["pyLIQTR>=0.3"]
 mqt = ["mqt.core>=2.0"]
 viz = ["matplotlib>=3.7", "plotly>=5.15"]
 optimize = ["pymoo>=0.6"]
-all = ["ftqre[qualtran,azure,pyliqtr,mqt,viz,optimize]"]
+all = ["quompass[qualtran,azure,pyliqtr,mqt,viz,optimize]"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -45,29 +45,29 @@ dev = [
 ]
 
 [project.scripts]
-ftqre = "ftqre.cli.main:app"
+quompass = "quompass.cli.main:app"
 
-[project.entry-points."ftqre.logical_estimators"]
-mock = "ftqre.backends.mock:MockLogicalEstimator"
-qualtran = "ftqre.backends.qualtran.adapter:QualtranLogicalEstimator"
-pyliqtr = "ftqre.backends.pyliqtr.adapter:PyLIQTRLogicalEstimator"
+[project.entry-points."quompass.logical_estimators"]
+mock = "quompass.backends.mock:MockLogicalEstimator"
+qualtran = "quompass.backends.qualtran.adapter:QualtranLogicalEstimator"
+pyliqtr = "quompass.backends.pyliqtr.adapter:PyLIQTRLogicalEstimator"
 
-[project.entry-points."ftqre.physical_estimators"]
-analytical = "ftqre.backends.mock:AnalyticalPhysicalEstimator"
-azure = "ftqre.backends.azure.adapter:AzurePhysicalEstimator"
-mqt = "ftqre.backends.mqt.adapter:MQTPhysicalEstimator"
+[project.entry-points."quompass.physical_estimators"]
+analytical = "quompass.backends.mock:AnalyticalPhysicalEstimator"
+azure = "quompass.backends.azure.adapter:AzurePhysicalEstimator"
+mqt = "quompass.backends.mqt.adapter:MQTPhysicalEstimator"
 
-[project.entry-points."ftqre.qec_schemes"]
-surface_code = "ftqre.core.qec:SurfaceCode"
-floquet_code = "ftqre.core.qec:FloquetCode"
-color_code = "ftqre.core.qec:color_code"
+[project.entry-points."quompass.qec_schemes"]
+surface_code = "quompass.core.qec:SurfaceCode"
+floquet_code = "quompass.core.qec:FloquetCode"
+color_code = "quompass.core.qec:color_code"
 
-[project.entry-points."ftqre.algorithm_templates"]
-shor = "ftqre.templates.shor:ShorTemplate"
-qpe = "ftqre.templates.qpe:QPETemplate"
-hamiltonian_sim = "ftqre.templates.hamiltonian_sim:HamiltonianSimTemplate"
-chemistry = "ftqre.templates.chemistry:ChemistryTemplate"
-grover = "ftqre.templates.grover:GroverTemplate"
+[project.entry-points."quompass.algorithm_templates"]
+shor = "quompass.templates.shor:ShorTemplate"
+qpe = "quompass.templates.qpe:QPETemplate"
+hamiltonian_sim = "quompass.templates.hamiltonian_sim:HamiltonianSimTemplate"
+chemistry = "quompass.templates.chemistry:ChemistryTemplate"
+grover = "quompass.templates.grover:GroverTemplate"
 
 [tool.setuptools.packages.find]
 where = ["src"]

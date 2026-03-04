@@ -2,9 +2,9 @@
 
 import pytest
 
-from ftqre.core.hardware import HardwareModel
-from ftqre.core.qec import FloquetCode, SurfaceCode, get_qec_scheme
-from ftqre.core.types import HardwarePreset
+from quompass.core.hardware import HardwareModel
+from quompass.core.qec import FloquetCode, SurfaceCode, get_qec_scheme
+from quompass.core.types import HardwarePreset
 
 
 class TestSurfaceCode:

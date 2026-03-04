@@ -7,12 +7,12 @@ import pytest
 
 qsharp = pytest.importorskip("qsharp", reason="qsharp not installed")
 
-from ftqre.backends.azure.adapter import AzurePhysicalEstimator
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
-from ftqre.core.error_budget import ErrorBudget
-from ftqre.core.hardware import HardwareModel
-from ftqre.core.qec import SurfaceCode, color_code
-from ftqre.core.types import HardwarePreset
+from quompass.backends.azure.adapter import AzurePhysicalEstimator
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
+from quompass.core.error_budget import ErrorBudget
+from quompass.core.hardware import HardwareModel
+from quompass.core.qec import SurfaceCode, color_code
+from quompass.core.types import HardwarePreset
 
 
 @pytest.mark.integration

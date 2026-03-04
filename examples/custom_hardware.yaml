@@ -2,7 +2,7 @@
 # Defines a hypothetical next-generation superconducting chip
 #
 # Usage:
-#   ftqre estimate --template shor --param n_bits=2048 \
+#   quompass estimate --template shor --param n_bits=2048 \
 #       --hardware examples/custom_hardware.yaml
 
 name: next_gen_sc

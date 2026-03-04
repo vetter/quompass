@@ -1,21 +1,21 @@
-# ftqre -- Portable Fault-Tolerant Quantum Resource Estimation
+# Quompass -- Portable Fault-Tolerant Quantum Resource Estimation
 
 A Python library for estimating the physical resources required to run fault-tolerant quantum algorithms. Provides a portable abstraction layer over estimation backends (Qualtran, Azure QRE) with pluggable QEC schemes, hardware models, and algorithm templates.
 
 ## Installation
 
 ```bash
-pip install ftqre
+pip install quompass
 ```
 
 Optional extras:
 
 ```bash
-pip install ftqre[viz]       # matplotlib plotting
-pip install ftqre[qualtran]  # Qualtran logical estimation backend
-pip install ftqre[azure]     # Azure QRE physical estimation backend
-pip install ftqre[all]       # everything
-pip install ftqre[dev]       # development tools (pytest, ruff, mypy)
+pip install quompass[viz]       # matplotlib plotting
+pip install quompass[qualtran]  # Qualtran logical estimation backend
+pip install quompass[azure]     # Azure QRE physical estimation backend
+pip install quompass[all]       # everything
+pip install quompass[dev]       # development tools (pytest, ruff, mypy)
 ```
 
 ## Quick Start (Python)
@@ -23,12 +23,12 @@ pip install ftqre[dev]       # development tools (pytest, ruff, mypy)
 ### One-shot estimation
 
 ```python
-import ftqre
-from ftqre.templates.shor import shor
+import quompass
+from quompass.templates.shor import shor
 
 # Estimate resources for factoring a 2048-bit integer
 spec = shor(n_bits=2048)
-result = ftqre.estimate(spec)
+result = quompass.estimate(spec)
 
 print(f"Physical qubits: {result.total_physical_qubits:,}")
 print(f"Runtime: {result.runtime_human}")
@@ -38,22 +38,22 @@ print(f"Code distance: {result.logical_qubit.code_distance}")
 ### Compare hardware targets and QEC schemes
 
 ```python
-import ftqre
-from ftqre.templates.chemistry import chemistry
+import quompass
+from quompass.templates.chemistry import chemistry
 
 spec = chemistry(num_orbitals=54, method="double_factorization")
 
 # Try different hardware + QEC combinations
 for hw in ["gate_ns_e3", "gate_ns_e4"]:
-    result = ftqre.estimate(spec, hardware=hw, qec="surface_code")
+    result = quompass.estimate(spec, hardware=hw, qec="surface_code")
     print(f"{hw}: {result.total_physical_qubits:,} qubits, {result.runtime_human}")
 ```
 
 ### Design space exploration
 
 ```python
-from ftqre.templates.shor import shor
-from ftqre.exploration import ExplorationSpace, explore
+from quompass.templates.shor import shor
+from quompass.exploration import ExplorationSpace, explore
 
 result = explore(ExplorationSpace(
     algorithm=shor(n_bits=2048),
@@ -70,8 +70,8 @@ result.sensitivity().print_table()      # Which parameter matters most?
 ### Custom algorithm specification
 
 ```python
-import ftqre
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
+import quompass
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
 
 # Define your own algorithm from known logical resource counts
 spec = AlgorithmSpec(
@@ -83,7 +83,7 @@ spec = AlgorithmSpec(
         measurement_count=100,
     ),
 )
-result = ftqre.estimate(spec)
+result = quompass.estimate(spec)
 print(f"Physical qubits: {result.total_physical_qubits:,}")
 ```
 
@@ -91,25 +91,25 @@ print(f"Physical qubits: {result.total_physical_qubits:,}")
 
 ```bash
 # Estimate resources for Shor's algorithm
-ftqre estimate --template shor --param n_bits=2048
+quompass estimate --template shor --param n_bits=2048
 
 # Explore the design space
-ftqre explore --template shor --param n_bits=2048 \
+quompass explore --template shor --param n_bits=2048 \
     --hardware gate_ns_e3,gate_ns_e4,gate_us_e3 \
     --qec surface_code,color_code \
     --error-budget 0.01,0.001 \
     --sensitivity
 
 # Optimize design space with NSGA-II
-ftqre optimize --template shor --param n_bits=2048 \
+quompass optimize --template shor --param n_bits=2048 \
     --hardware gate_ns_e3,gate_ns_e4 --qec surface_code \
     --generations 50 --output pareto
 
 # List available templates, hardware, QEC schemes, backends
-ftqre catalog templates
-ftqre catalog hardware
-ftqre catalog qec
-ftqre catalog backends
+quompass catalog templates
+quompass catalog hardware
+quompass catalog qec
+quompass catalog backends
 ```
 
 ## Available Templates

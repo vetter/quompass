@@ -7,8 +7,8 @@ import pytest
 
 qualtran = pytest.importorskip("qualtran", reason="qualtran not installed")
 
-from ftqre.backends.qualtran.adapter import QualtranLogicalEstimator
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
+from quompass.backends.qualtran.adapter import QualtranLogicalEstimator
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
 
 
 @pytest.mark.integration

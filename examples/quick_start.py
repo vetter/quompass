@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""ftqre Quick Start Examples
+"""quompass Quick Start Examples
 
-Run this script to see ftqre in action:
+Run this script to see quompass in action:
     python examples/quick_start.py
 """
 
-import ftqre
-from ftqre.templates.shor import shor
-from ftqre.templates.chemistry import chemistry
-from ftqre.exploration import ExplorationSpace, explore
+import quompass
+from quompass.templates.shor import shor
+from quompass.templates.chemistry import chemistry
+from quompass.exploration import ExplorationSpace, explore
 
 
 def basic_estimation():
@@ -18,7 +18,7 @@ def basic_estimation():
     print("=" * 60)
 
     spec = shor(n_bits=2048)
-    result = ftqre.estimate(spec)
+    result = quompass.estimate(spec)
 
     print(f"Algorithm: {result.algorithm_spec.name}")
     print(f"Physical qubits: {result.total_physical_qubits:,}")
@@ -39,7 +39,7 @@ def compare_hardware():
     spec = chemistry(num_orbitals=54, method="double_factorization")
 
     for hw in ["gate_ns_e3", "gate_ns_e4", "gate_us_e3"]:
-        result = ftqre.estimate(spec, hardware=hw, qec="surface_code")
+        result = quompass.estimate(spec, hardware=hw, qec="surface_code")
         print(
             f"  {hw:12s}: {result.total_physical_qubits:>12,} qubits, "
             f"{result.runtime_human:>10}, distance={result.logical_qubit.code_distance}"
@@ -92,7 +92,7 @@ def custom_algorithm():
     print("Example 4: Custom Algorithm Spec")
     print("=" * 60)
 
-    from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
+    from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
 
     spec = AlgorithmSpec(
         name="My Custom Algorithm",
@@ -104,7 +104,7 @@ def custom_algorithm():
         ),
     )
 
-    result = ftqre.estimate(spec)
+    result = quompass.estimate(spec)
     print(f"Algorithm: {result.algorithm_spec.name}")
     print(f"Physical qubits: {result.total_physical_qubits:,}")
     print(f"Runtime: {result.runtime_human}")
@@ -117,7 +117,7 @@ def custom_qec():
     print("Example 5: Custom QEC Scheme (FormulaQEC)")
     print("=" * 60)
 
-    from ftqre import FormulaQEC
+    from quompass import FormulaQEC
 
     # Define a hypothetical code with linear qubit overhead
     my_code = FormulaQEC(
@@ -132,7 +132,7 @@ def custom_qec():
 
     for qec in ["surface_code", my_code]:
         qec_name = qec if isinstance(qec, str) else qec.name
-        result = ftqre.estimate(spec, qec=qec)
+        result = quompass.estimate(spec, qec=qec)
         print(
             f"  {qec_name:15s}: {result.total_physical_qubits:>12,} qubits, "
             f"distance={result.logical_qubit.code_distance}"

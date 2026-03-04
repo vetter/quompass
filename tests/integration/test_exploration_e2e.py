@@ -1,7 +1,7 @@
 """End-to-end integration tests for the exploration module."""
 
-from ftqre.exploration import ExplorationSpace, explore
-from ftqre.templates.shor import shor
+from quompass.exploration import ExplorationSpace, explore
+from quompass.templates.shor import shor
 
 
 class TestExplorationE2E:
@@ -109,7 +109,7 @@ class TestExplorationE2E:
 class TestExploreCLI:
     def test_explore_basic(self):
         from typer.testing import CliRunner
-        from ftqre.cli.main import app
+        from quompass.cli.main import app
 
         runner = CliRunner()
         result = runner.invoke(app, [
@@ -124,7 +124,7 @@ class TestExploreCLI:
 
     def test_explore_pareto_output(self):
         from typer.testing import CliRunner
-        from ftqre.cli.main import app
+        from quompass.cli.main import app
 
         runner = CliRunner()
         result = runner.invoke(app, [
@@ -140,7 +140,7 @@ class TestExploreCLI:
 
     def test_explore_with_sensitivity(self):
         from typer.testing import CliRunner
-        from ftqre.cli.main import app
+        from quompass.cli.main import app
 
         runner = CliRunner()
         result = runner.invoke(app, [

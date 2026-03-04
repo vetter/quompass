@@ -2,11 +2,11 @@
 
 import pytest
 
-from ftqre.templates.qpe import QPETemplate, qpe
-from ftqre.templates.hamiltonian_sim import HamiltonianSimTemplate, hamiltonian_sim
-from ftqre.templates.chemistry import ChemistryTemplate, chemistry
-from ftqre.templates.grover import GroverTemplate, grover
-from ftqre.templates.registry import get_template, list_templates
+from quompass.templates.qpe import QPETemplate, qpe
+from quompass.templates.hamiltonian_sim import HamiltonianSimTemplate, hamiltonian_sim
+from quompass.templates.chemistry import ChemistryTemplate, chemistry
+from quompass.templates.grover import GroverTemplate, grover
+from quompass.templates.registry import get_template, list_templates
 
 
 # ---------------------------------------------------------------------------

@@ -2,8 +2,8 @@
 
 import pytest
 
-from ftqre.core.hardware import HardwareModel
-from ftqre.core.types import HardwarePreset, InstructionSet
+from quompass.core.hardware import HardwareModel
+from quompass.core.types import HardwarePreset, InstructionSet
 
 
 class TestHardwarePresets:

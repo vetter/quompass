@@ -4,8 +4,8 @@ import pytest
 
 pymoo = pytest.importorskip("pymoo", reason="pymoo not installed")
 
-from ftqre.optimization import OptimizationSpace, optimize
-from ftqre.templates.shor import shor
+from quompass.optimization import OptimizationSpace, optimize
+from quompass.templates.shor import shor
 
 
 @pytest.fixture

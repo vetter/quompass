@@ -1,6 +1,6 @@
 """Tests for core algorithm types."""
 
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
 
 
 class TestLogicalCounts:

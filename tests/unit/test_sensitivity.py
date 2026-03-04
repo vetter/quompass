@@ -2,9 +2,9 @@
 
 import pytest
 
-from ftqre.exploration import ExplorationSpace, explore
-from ftqre.exploration.sensitivity import compute_sensitivity, _pct_change
-from ftqre.templates.shor import shor
+from quompass.exploration import ExplorationSpace, explore
+from quompass.exploration.sensitivity import compute_sensitivity, _pct_change
+from quompass.templates.shor import shor
 
 
 class TestSensitivity:

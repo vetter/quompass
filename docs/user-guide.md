@@ -1,10 +1,10 @@
-# ftqre User Guide
+# Quompass User Guide
 
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
 - [Python API](#python-api)
-  - [ftqre.estimate()](#ftqreestimate)
+  - [quompass.estimate()](#quompassestimate)
   - [Algorithm Templates](#algorithm-templates)
   - [Result Objects](#result-objects)
 - [Design Space Exploration](#design-space-exploration)
@@ -24,9 +24,9 @@
   - [Custom QEC YAML](#custom-qec-yaml)
   - [Exporting Results](#exporting-results)
 - [CLI Reference](#cli-reference)
-  - [ftqre estimate](#ftqre-estimate)
-  - [ftqre explore](#ftqre-explore)
-  - [ftqre catalog](#ftqre-catalog)
+  - [quompass estimate](#quompass-estimate)
+  - [quompass explore](#quompass-explore)
+  - [quompass catalog](#quompass-catalog)
 - [Plugin Architecture](#plugin-architecture)
 - [Hardware Presets Reference](#hardware-presets-reference)
 
@@ -34,7 +34,7 @@
 
 ## Architecture Overview
 
-ftqre uses a two-stage pipeline that separates logical resource estimation from physical resource estimation:
+quompass uses a two-stage pipeline that separates logical resource estimation from physical resource estimation:
 
 ```
                         Logical Stage                Physical Stage
@@ -65,12 +65,12 @@ You can bring your own `LogicalCounts` from any source: Qualtran Bloqs, publishe
 
 ## Python API
 
-### ftqre.estimate()
+### quompass.estimate()
 
 The primary entry point. Handles type coercion, backend selection, and the full pipeline.
 
 ```python
-ftqre.estimate(
+quompass.estimate(
     algorithm: AlgorithmSpec,
     hardware: HardwareModel | HardwarePreset | str = "gate_ns_e3",
     qec: QECScheme | str = "surface_code",
@@ -94,10 +94,10 @@ ftqre.estimate(
 **Example:**
 
 ```python
-import ftqre
-from ftqre.templates.shor import shor
+import quompass
+from quompass.templates.shor import shor
 
-result = ftqre.estimate(
+result = quompass.estimate(
     shor(n_bits=2048),
     hardware="gate_ns_e4",
     qec="surface_code",
@@ -112,7 +112,7 @@ Each template is a convenience function that returns an `AlgorithmSpec` with com
 #### shor -- Integer Factoring
 
 ```python
-from ftqre.templates.shor import shor
+from quompass.templates.shor import shor
 
 spec = shor(n_bits=2048, construction="gidney_ekera")
 ```
@@ -127,7 +127,7 @@ Resource model: Gidney & Ekera (2021) -- ~2n qubits, ~0.3n^3 Toffoli gates.
 #### qpe -- Quantum Phase Estimation
 
 ```python
-from ftqre.templates.qpe import qpe
+from quompass.templates.qpe import qpe
 
 spec = qpe(num_qubits=50, precision_bits=20)
 ```
@@ -143,7 +143,7 @@ Resource model: standard QPE with ~2^precision controlled-U operations.
 #### hamiltonian_sim -- Hamiltonian Simulation
 
 ```python
-from ftqre.templates.hamiltonian_sim import hamiltonian_sim
+from quompass.templates.hamiltonian_sim import hamiltonian_sim
 
 spec = hamiltonian_sim(num_qubits=50, evolution_time=10.0, method="qsp")
 ```
@@ -164,7 +164,7 @@ Methods and their scaling:
 #### chemistry -- Quantum Chemistry
 
 ```python
-from ftqre.templates.chemistry import chemistry
+from quompass.templates.chemistry import chemistry
 
 spec = chemistry(num_orbitals=108, method="double_factorization")
 ```
@@ -183,7 +183,7 @@ Resource models from published estimates:
 #### grover -- Grover's Search
 
 ```python
-from ftqre.templates.grover import grover
+from quompass.templates.grover import grover
 
 spec = grover(search_space_bits=30, num_solutions=1)
 ```
@@ -200,10 +200,10 @@ Resource model: pi/4 * sqrt(N/M) Grover iterations.
 
 #### PhysicalEstimate
 
-The primary output of `ftqre.estimate()`. Frozen dataclass with:
+The primary output of `quompass.estimate()`. Frozen dataclass with:
 
 ```python
-result = ftqre.estimate(spec)
+result = quompass.estimate(spec)
 
 # Top-level summary
 result.total_physical_qubits       # int: total physical qubits needed
@@ -249,7 +249,7 @@ result.summary_dict()      # dict for tabular display
 #### Visualization
 
 ```python
-from ftqre.viz.summary import print_estimate_summary, print_estimate_detail
+from quompass.viz.summary import print_estimate_summary, print_estimate_detail
 
 print_estimate_summary(result)  # Compact Rich table
 print_estimate_detail(result)   # Full breakdown with logical qubit + T factory details
@@ -266,8 +266,8 @@ Sweep across hardware, QEC, and error budget combinations to find optimal config
 Define the grid of parameters to explore:
 
 ```python
-from ftqre.templates.shor import shor
-from ftqre.exploration import ExplorationSpace, explore
+from quompass.templates.shor import shor
+from quompass.exploration import ExplorationSpace, explore
 
 space = ExplorationSpace(
     algorithm=shor(n_bits=2048),
@@ -356,7 +356,7 @@ sens = result.sensitivity(
 
 ### Plotting
 
-Requires matplotlib (`pip install ftqre[viz]`):
+Requires matplotlib (`pip install quompass[viz]`):
 
 ```python
 # Scatter plot with Pareto front overlay
@@ -380,7 +380,7 @@ Use NSGA-II genetic algorithm optimization for continuous design space explorati
 
 ### When to Use Optimize vs Explore
 
-| Feature | `ftqre explore` (Grid) | `ftqre optimize` (NSGA-II) |
+| Feature | `quompass explore` (Grid) | `quompass optimize` (NSGA-II) |
 |---------|----------------------|---------------------------|
 | Error budget | Discrete values | Continuous range |
 | Budget splits | Default (uniform) | Optimized (logical/distillation/rotation) |
@@ -395,8 +395,8 @@ Use **explore** when you want exhaustive comparison of a few discrete configurat
 Define the search space with continuous ranges and categorical choices:
 
 ```python
-from ftqre.templates.shor import shor
-from ftqre.optimization import OptimizationSpace, optimize
+from quompass.templates.shor import shor
+from quompass.optimization import OptimizationSpace, optimize
 
 space = OptimizationSpace(
     algorithm=shor(n_bits=2048),
@@ -457,7 +457,7 @@ er = result.to_exploration_result()
 er.plot(save_path="optimization.png")
 ```
 
-**Requires:** `pip install 'ftqre[optimize]'` (installs pymoo).
+**Requires:** `pip install 'quompass[optimize]'` (installs pymoo).
 
 ---
 
@@ -466,7 +466,7 @@ er.plot(save_path="optimization.png")
 Use `FormulaQEC` to define QEC schemes via formula strings, without writing Python classes:
 
 ```python
-from ftqre import FormulaQEC
+from quompass import FormulaQEC
 
 # Define a hypothetical qLDPC code
 my_code = FormulaQEC(
@@ -478,10 +478,10 @@ my_code = FormulaQEC(
 )
 
 # Use it in estimation
-import ftqre
-from ftqre.templates.shor import shor
+import quompass
+from quompass.templates.shor import shor
 
-result = ftqre.estimate(shor(n_bits=2048), qec=my_code)
+result = quompass.estimate(shor(n_bits=2048), qec=my_code)
 ```
 
 ### Formula Variables
@@ -516,7 +516,7 @@ The logical error rate is computed as: `prefactor * d^power * (p/threshold)^((d+
 ### Built-in FormulaQEC: Color Code
 
 ```python
-from ftqre import color_code
+from quompass import color_code
 
 cc = color_code()  # 6.6.6 color code with threshold 0.0077, ~4.5*d^2 qubits
 ```
@@ -525,11 +525,11 @@ cc = color_code()  # 6.6.6 color code with threshold 0.0077, ~4.5*d^2 qubits
 
 ## YAML Workflows
 
-ftqre supports YAML files for algorithm specs, hardware models, QEC schemes, and result export. This enables reproducible workflows, version-controlled configurations, and easy sharing.
+quompass supports YAML files for algorithm specs, hardware models, QEC schemes, and result export. This enables reproducible workflows, version-controlled configurations, and easy sharing.
 
 ### Algorithm Spec YAML
 
-Define an algorithm spec in YAML and pass it to `ftqre estimate --spec`:
+Define an algorithm spec in YAML and pass it to `quompass estimate --spec`:
 
 ```yaml
 # shor_2048.yaml
@@ -553,13 +553,13 @@ logical_counts:
 ```
 
 ```bash
-ftqre estimate --spec shor_2048.yaml
+quompass estimate --spec shor_2048.yaml
 ```
 
 **Python API:**
 
 ```python
-from ftqre.io import load_algorithm, save_yaml
+from quompass.io import load_algorithm, save_yaml
 
 # Load
 spec = load_algorithm("shor_2048.yaml")
@@ -591,16 +591,16 @@ qubit_params:
 ```
 
 ```bash
-ftqre estimate --template shor --param n_bits=2048 --hardware custom_hardware.yaml
+quompass estimate --template shor --param n_bits=2048 --hardware custom_hardware.yaml
 ```
 
 **Python API:**
 
 ```python
-from ftqre.io import load_hardware
+from quompass.io import load_hardware
 
 hw = load_hardware("custom_hardware.yaml")
-result = ftqre.estimate(spec, hardware=hw)
+result = quompass.estimate(spec, hardware=hw)
 ```
 
 ### Custom QEC YAML
@@ -618,16 +618,16 @@ distance_coefficient_power: 0.0
 ```
 
 ```bash
-ftqre estimate --template shor --param n_bits=2048 --qec custom_qec.yaml
+quompass estimate --template shor --param n_bits=2048 --qec custom_qec.yaml
 ```
 
 **Python API:**
 
 ```python
-from ftqre.io import load_qec
+from quompass.io import load_qec
 
 qec = load_qec("custom_qec.yaml")
-result = ftqre.estimate(spec, qec=qec)
+result = quompass.estimate(spec, qec=qec)
 ```
 
 ### Exporting Results
@@ -636,18 +636,18 @@ Export estimation results as YAML using `--output yaml` or the Python API:
 
 ```bash
 # CLI: export as YAML
-ftqre estimate --template shor --param n_bits=2048 --output yaml > result.yaml
+quompass estimate --template shor --param n_bits=2048 --output yaml > result.yaml
 
 # Exploration results
-ftqre explore --template shor --param n_bits=512 --hardware gate_ns_e3,gate_ns_e4 --output yaml
+quompass explore --template shor --param n_bits=512 --hardware gate_ns_e3,gate_ns_e4 --output yaml
 ```
 
 **Python API:**
 
 ```python
-from ftqre.io import save_estimate, save_yaml
+from quompass.io import save_estimate, save_yaml
 
-result = ftqre.estimate(spec)
+result = quompass.estimate(spec)
 
 # Full nested result
 save_estimate(result, "result.yaml")
@@ -662,12 +662,12 @@ The exported YAML includes nested sections for summary, breakdown, logical qubit
 
 ## CLI Reference
 
-### ftqre estimate
+### quompass estimate
 
 Estimate physical resources for a quantum algorithm.
 
 ```
-ftqre estimate [OPTIONS]
+quompass estimate [OPTIONS]
 ```
 
 | Option | Default | Description |
@@ -684,33 +684,33 @@ ftqre estimate [OPTIONS]
 
 ```bash
 # Shor's algorithm with optimistic hardware
-ftqre estimate --template shor --param n_bits=2048 --hardware gate_ns_e4
+quompass estimate --template shor --param n_bits=2048 --hardware gate_ns_e4
 
 # Chemistry with color code QEC
-ftqre estimate --template chemistry --param num_orbitals=108 \
+quompass estimate --template chemistry --param num_orbitals=108 \
     --param method=double_factorization --qec color_code
 
 # Detailed output
-ftqre estimate --template qpe --param num_qubits=50 --output detail
+quompass estimate --template qpe --param num_qubits=50 --output detail
 
 # YAML output
-ftqre estimate --template shor --param n_bits=2048 --output yaml
+quompass estimate --template shor --param n_bits=2048 --output yaml
 
 # Custom hardware and QEC from YAML files
-ftqre estimate --template shor --param n_bits=2048 \
+quompass estimate --template shor --param n_bits=2048 \
     --hardware examples/custom_hardware.yaml \
     --qec examples/custom_qec.yaml
 
 # Load algorithm spec from YAML
-ftqre estimate --spec examples/shor_2048.yaml --output yaml
+quompass estimate --spec examples/shor_2048.yaml --output yaml
 ```
 
-### ftqre explore
+### quompass explore
 
 Explore the design space across hardware, QEC, and error budget combinations.
 
 ```
-ftqre explore [OPTIONS]
+quompass explore [OPTIONS]
 ```
 
 | Option | Default | Description |
@@ -730,31 +730,31 @@ ftqre explore [OPTIONS]
 
 ```bash
 # Full sweep with sensitivity analysis
-ftqre explore --template shor --param n_bits=2048 \
+quompass explore --template shor --param n_bits=2048 \
     --hardware gate_ns_e3,gate_ns_e4,gate_us_e3 \
     --qec surface_code,color_code \
     --error-budget 0.01,0.001,0.0001 \
     --sensitivity
 
 # Pareto front output
-ftqre explore --template chemistry --param num_orbitals=54 \
+quompass explore --template chemistry --param num_orbitals=54 \
     --hardware gate_ns_e3,gate_ns_e4 \
     --error-budget 0.01,0.001 \
     --output pareto
 
 # Save exploration plot
-ftqre explore --template grover --param search_space_bits=30 \
+quompass explore --template grover --param search_space_bits=30 \
     --hardware gate_ns_e3,gate_ns_e4 \
     --error-budget 0.01,0.001,0.0001 \
     --plot exploration.png
 ```
 
-### ftqre optimize
+### quompass optimize
 
 Run NSGA-II multi-objective optimization across the design space.
 
 ```
-ftqre optimize [OPTIONS]
+quompass optimize [OPTIONS]
 ```
 
 | Option | Default | Description |
@@ -776,43 +776,43 @@ ftqre optimize [OPTIONS]
 
 ```bash
 # Basic optimization
-ftqre optimize --template shor --param n_bits=2048 \
+quompass optimize --template shor --param n_bits=2048 \
     --hardware gate_ns_e3,gate_ns_e4 --qec surface_code \
     --generations 50 --population-size 100
 
 # Quick test run
-ftqre optimize --template shor --param n_bits=64 \
+quompass optimize --template shor --param n_bits=64 \
     --hardware gate_ns_e3,gate_ns_e4 --qec surface_code \
     --generations 5 --population-size 10
 
 # Pareto front output with reproducibility
-ftqre optimize --template shor --param n_bits=2048 \
+quompass optimize --template shor --param n_bits=2048 \
     --hardware gate_ns_e3,gate_ns_e4 --qec surface_code,color_code \
     --output pareto --seed 42
 
 # Custom objectives
-ftqre optimize --template chemistry --param num_orbitals=54 \
+quompass optimize --template chemistry --param num_orbitals=54 \
     --objective space_time_volume:minimize \
     --generations 30
 ```
 
-### ftqre catalog
+### quompass catalog
 
 List available templates, hardware presets, QEC schemes, and backends.
 
 ```bash
-ftqre catalog templates              # List all algorithm templates
-ftqre catalog templates shor         # Show details for a specific template
-ftqre catalog hardware               # List hardware presets
-ftqre catalog qec                    # List QEC schemes
-ftqre catalog backends               # List estimation backends and availability
+quompass catalog templates              # List all algorithm templates
+quompass catalog templates shor         # Show details for a specific template
+quompass catalog hardware               # List hardware presets
+quompass catalog qec                    # List QEC schemes
+quompass catalog backends               # List estimation backends and availability
 ```
 
 ---
 
 ## Plugin Architecture
 
-ftqre uses Python `entry_points` for plugin discovery. Third-party packages can register new templates, backends, and QEC schemes.
+quompass uses Python `entry_points` for plugin discovery. Third-party packages can register new templates, backends, and QEC schemes.
 
 ### Adding a Custom Template
 
@@ -820,8 +820,8 @@ Create a class extending `AlgorithmTemplate` and register it in your package's `
 
 ```python
 # my_package/templates.py
-from ftqre.templates.base import AlgorithmTemplate
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
+from quompass.templates.base import AlgorithmTemplate
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
 
 class MyTemplate(AlgorithmTemplate):
     @property
@@ -852,41 +852,41 @@ class MyTemplate(AlgorithmTemplate):
 
 ```toml
 # pyproject.toml
-[project.entry-points."ftqre.algorithm_templates"]
+[project.entry-points."quompass.algorithm_templates"]
 my_algorithm = "my_package.templates:MyTemplate"
 ```
 
-After installing your package, `ftqre catalog templates` will list `my_algorithm`.
+After installing your package, `quompass catalog templates` will list `my_algorithm`.
 
 ### Adding a Custom Backend
 
 Extend `LogicalEstimator` or `PhysicalEstimator`:
 
 ```toml
-[project.entry-points."ftqre.logical_estimators"]
+[project.entry-points."quompass.logical_estimators"]
 my_backend = "my_package.backend:MyLogicalEstimator"
 
-[project.entry-points."ftqre.physical_estimators"]
+[project.entry-points."quompass.physical_estimators"]
 my_physical = "my_package.backend:MyPhysicalEstimator"
 ```
 
 ### Registered Backend Stubs
 
-ftqre includes stub adapters for backends that are not yet fully implemented but are registered for future use:
+quompass includes stub adapters for backends that are not yet fully implemented but are registered for future use:
 
 | Backend | Type | Entry Point | Status |
 |---------|------|-------------|--------|
-| **pyLIQTR** | Logical estimator | `ftqre.logical_estimators` | Stub (install pyLIQTR to enable) |
-| **MQT** | Physical estimator | `ftqre.physical_estimators` | Stub (install mqt.core to enable) |
+| **pyLIQTR** | Logical estimator | `quompass.logical_estimators` | Stub (install pyLIQTR to enable) |
+| **MQT** | Physical estimator | `quompass.physical_estimators` | Stub (install mqt.core to enable) |
 
-These stubs appear in `ftqre catalog backends` as "(unavailable)". When the underlying package is installed, they will be discovered automatically. Community contributions to implement the adapter logic are welcome.
+These stubs appear in `quompass catalog backends` as "(unavailable)". When the underlying package is installed, they will be discovered automatically. Community contributions to implement the adapter logic are welcome.
 
 ### Adding a Custom QEC Scheme
 
 Register a `FormulaQEC` factory or a `QECScheme` subclass:
 
 ```toml
-[project.entry-points."ftqre.qec_schemes"]
+[project.entry-points."quompass.qec_schemes"]
 my_code = "my_package.qec:MyQECScheme"
 ```
 

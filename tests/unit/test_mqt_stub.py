@@ -2,9 +2,9 @@
 
 import pytest
 
-from ftqre.backends.mqt.adapter import MQTPhysicalEstimator
-from ftqre.backends.registry import discover_physical_estimators, select_backends
-from ftqre.core.qec import SurfaceCode
+from quompass.backends.mqt.adapter import MQTPhysicalEstimator
+from quompass.backends.registry import discover_physical_estimators, select_backends
+from quompass.core.qec import SurfaceCode
 
 
 class TestMQTStub:
@@ -21,7 +21,7 @@ class TestMQTStub:
         self, small_algorithm_spec, superconducting_hw, surface_code, default_error_budget
     ):
         est = MQTPhysicalEstimator()
-        from ftqre.core.algorithm import LogicalCounts
+        from quompass.core.algorithm import LogicalCounts
 
         lc = small_algorithm_spec.logical_counts
         with pytest.raises(NotImplementedError, match="MQT backend is not yet implemented"):

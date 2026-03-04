@@ -2,11 +2,11 @@
 
 import pytest
 
-from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
-from ftqre.core.error_budget import ErrorBudget
-from ftqre.core.hardware import HardwareModel
-from ftqre.core.qec import SurfaceCode
-from ftqre.core.types import HardwarePreset
+from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
+from quompass.core.error_budget import ErrorBudget
+from quompass.core.hardware import HardwareModel
+from quompass.core.qec import SurfaceCode
+from quompass.core.types import HardwarePreset
 
 
 @pytest.fixture

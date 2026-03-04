@@ -1,6 +1,6 @@
 """Tests for error budget distribution."""
 
-from ftqre.core.error_budget import ErrorBudget
+from quompass.core.error_budget import ErrorBudget
 
 
 class TestErrorBudget:

@@ -1,7 +1,7 @@
 """Tests for algorithm templates."""
 
-from ftqre.templates.shor import ShorTemplate, shor
-from ftqre.templates.registry import get_template, list_templates
+from quompass.templates.shor import ShorTemplate, shor
+from quompass.templates.registry import get_template, list_templates
 
 
 class TestShorTemplate:

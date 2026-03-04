@@ -2,9 +2,9 @@
 
 import pytest
 
-from ftqre.core.hardware import HardwareModel
-from ftqre.core.qec import FormulaQEC, _safe_eval, color_code, get_qec_scheme
-from ftqre.core.types import HardwarePreset
+from quompass.core.hardware import HardwareModel
+from quompass.core.qec import FormulaQEC, _safe_eval, color_code, get_qec_scheme
+from quompass.core.types import HardwarePreset
 
 
 class TestSafeEval:
@@ -77,7 +77,7 @@ class TestFormulaQEC:
 
     def test_matches_surface_code(self):
         """FormulaQEC with surface code parameters should match SurfaceCode."""
-        from ftqre.core.qec import SurfaceCode
+        from quompass.core.qec import SurfaceCode
 
         sc = SurfaceCode()
         fqec = FormulaQEC(
@@ -241,13 +241,13 @@ class TestColorCode:
 
     def test_color_code_with_estimator(self):
         """Full pipeline with color code."""
-        import ftqre
-        from ftqre.core.algorithm import AlgorithmSpec, LogicalCounts
+        import quompass
+        from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
 
         spec = AlgorithmSpec(
             name="Test",
             logical_counts=LogicalCounts(num_qubits=10, t_count=100),
         )
-        result = ftqre.estimate(spec, qec=color_code())
+        result = quompass.estimate(spec, qec=color_code())
         assert result.total_physical_qubits > 0
         assert result.runtime_seconds > 0

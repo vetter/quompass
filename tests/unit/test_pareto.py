@@ -2,8 +2,8 @@
 
 from unittest.mock import MagicMock
 
-from ftqre.exploration.pareto import extract_pareto_front
-from ftqre.exploration.space import DesignPoint
+from quompass.exploration.pareto import extract_pareto_front
+from quompass.exploration.space import DesignPoint
 
 
 def _mock_point(hw, qec, eb, qubits, runtime, rqops=1e6, stv=None):

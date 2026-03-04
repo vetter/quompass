@@ -1,7 +1,7 @@
 """Tests for the grid search explorer."""
 
-from ftqre.exploration import ExplorationSpace, explore
-from ftqre.templates.shor import shor
+from quompass.exploration import ExplorationSpace, explore
+from quompass.templates.shor import shor
 
 
 class TestExplore:

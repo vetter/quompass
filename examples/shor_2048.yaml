@@ -2,8 +2,8 @@
 # Using Gidney-Ekera construction (arXiv:1905.09749)
 #
 # Usage:
-#   ftqre estimate --spec examples/shor_2048.yaml
-#   ftqre estimate --spec examples/shor_2048.yaml --output yaml
+#   quompass estimate --spec examples/shor_2048.yaml
+#   quompass estimate --spec examples/shor_2048.yaml --output yaml
 
 name: "Shor's factoring (n=2048, Gidney-Ekera)"
 description: >
