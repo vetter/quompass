@@ -135,10 +135,10 @@ def parse_result(
     )
 
     required_logical_rate = float(
-        breakdown.get("requiredLogicalQubitErrorRate", 0)
+        breakdown.get("requiredLogicalQubitErrorRate") or 0
     )
     required_t_state_rate = float(
-        breakdown.get("requiredLogicalTstateErrorRate", 0)
+        breakdown.get("requiredLogicalTstateErrorRate") or 0
     )
 
     return PhysicalEstimate(

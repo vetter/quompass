@@ -43,21 +43,31 @@ def build_params(
 
 
 def _map_qubit_params(hardware: HardwareModel) -> dict:
-    """Map QubitParams to Azure qubitParams dict."""
+    """Map QubitParams to Azure qubitParams dict.
+
+    Azure QRE uses different parameter sets for gate-based vs Majorana qubits.
+    Gate-based: oneQubitGateTime/ErrorRate, twoQubitGateTime/ErrorRate, etc.
+    Majorana: oneQubitMeasurementTime/ErrorRate, twoQubitJointMeasurement*, tGate*.
+    Sending gate-based fields to a Majorana instruction set causes an error.
+    """
+    from quompass.core.types import InstructionSet
+
     qp = hardware.qubit_params
 
     result: dict = {
         "name": qp.name,
         "instructionSet": qp.instruction_set.value,
-        "oneQubitGateTime": _seconds_to_azure_time(qp.one_qubit_gate_time),
-        "twoQubitGateTime": _seconds_to_azure_time(qp.two_qubit_gate_time),
         "oneQubitMeasurementTime": _seconds_to_azure_time(qp.one_qubit_measurement_time),
-        "tGateTime": _seconds_to_azure_time(qp.t_gate_time),
-        "oneQubitGateErrorRate": qp.one_qubit_gate_error_rate,
-        "twoQubitGateErrorRate": qp.two_qubit_gate_error_rate,
         "oneQubitMeasurementErrorRate": qp.one_qubit_measurement_error_rate,
+        "tGateTime": _seconds_to_azure_time(qp.t_gate_time),
         "tGateErrorRate": qp.t_gate_error_rate,
     }
+
+    if qp.instruction_set == InstructionSet.GATE_BASED:
+        result["oneQubitGateTime"] = _seconds_to_azure_time(qp.one_qubit_gate_time)
+        result["twoQubitGateTime"] = _seconds_to_azure_time(qp.two_qubit_gate_time)
+        result["oneQubitGateErrorRate"] = qp.one_qubit_gate_error_rate
+        result["twoQubitGateErrorRate"] = qp.two_qubit_gate_error_rate
 
     if qp.idle_error_rate is not None:
         result["idleErrorRate"] = qp.idle_error_rate

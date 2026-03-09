@@ -73,7 +73,7 @@ def _evaluate_single(
             error_budget=error_budget,
             estimate=result,
         )
-    except Exception as e:
+    except BaseException as e:
         logger.debug(
             "Estimation failed for hw=%s qec=%s eb=%s: %s",
             hw_name, qec_name, error_budget, e,

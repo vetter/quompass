@@ -81,6 +81,11 @@ class TestBuildParams:
         assert qp["instructionSet"] == "majorana"
         assert "twoQubitJointMeasurementTime" in qp
         assert "twoQubitJointMeasurementErrorRate" in qp
+        # Majorana qubits should NOT have gate-based fields
+        assert "oneQubitGateTime" not in qp
+        assert "twoQubitGateTime" not in qp
+        assert "oneQubitGateErrorRate" not in qp
+        assert "twoQubitGateErrorRate" not in qp
 
 
 class TestMapQecScheme:

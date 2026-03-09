@@ -105,117 +105,93 @@ def _lookup_qualtran_bloq(source: str, params: dict[str, Any]) -> Any:
 
 @_register_family("cryptanalysis")
 def _try_shor_bloq(params: dict[str, Any]) -> Any:
-    """Try to construct a Qualtran Shor/RSA factoring Bloq."""
-    try:
-        from qualtran.bloqs.factoring.mod_exp import ModExp
+    """Try to construct a Qualtran Shor/RSA factoring Bloq.
 
-        n_bits = int(params.get("n_bits", 2048))
-        return ModExp(base=2, exp_bitsize=n_bits, mod_bitsize=n_bits)
-    except ImportError:
-        raise ValueError(
-            "Qualtran factoring bloqs not available. "
-            "Install qualtran with: pip install 'qualtran>=0.4'"
-        )
+    Uses ModExp from qualtran.bloqs.cryptography.rsa (qualtran >= 0.7)
+    or qualtran.bloqs.factoring.mod_exp (qualtran < 0.7).
+    """
+    n_bits = int(params.get("n_bits", 2048))
+    # Use a small placeholder modulus (actual value doesn't affect resource counts
+    # structurally, but qualtran requires a concrete value)
+    mod = (1 << n_bits) - 1  # 2^n - 1 as placeholder
+
+    # Try qualtran >= 0.7 path first
+    try:
+        from qualtran.bloqs.cryptography.rsa import ModExp
+
+        return ModExp(base=2, mod=mod, exp_bitsize=n_bits, x_bitsize=n_bits)
+    except (ImportError, TypeError):
+        pass
+
+    # Try legacy qualtran < 0.7 path
+    try:
+        from qualtran.bloqs.factoring.mod_exp import ModExp as LegacyModExp
+
+        return LegacyModExp(base=2, exp_bitsize=n_bits, mod_bitsize=n_bits)
+    except (ImportError, TypeError):
+        pass
+
+    raise ValueError(
+        "Qualtran factoring/cryptography bloqs not available. "
+        "Install qualtran with: pip install 'qualtran>=0.4'"
+    )
 
 
 @_register_family("phase_estimation")
 def _try_qpe_bloq(params: dict[str, Any]) -> Any:
-    """Try to construct a Qualtran QPE Bloq."""
-    try:
-        from qualtran.bloqs.phase_estimation import QubitizationQPE
+    """Try to construct a Qualtran QPE Bloq.
 
-        num_qubits = int(params.get("num_qubits", 10))
-        precision_bits = int(params.get("precision_bits", 20))
-        return QubitizationQPE(
-            num_qubits=num_qubits, precision_bits=precision_bits
-        )
-    except (ImportError, TypeError):
-        # QubitizationQPE may not exist or may have different signature
-        logger.debug(
-            "Could not construct QPE Bloq from qualtran; "
-            "will fall back to template-provided counts"
-        )
-        raise ValueError("Qualtran QPE bloqs not available or incompatible")
+    QPE Bloqs (TextbookQPE, QubitizationQPE) require an inner unitary/walk
+    operator that can't be auto-constructed from template parameters alone.
+    This builder supports the ``qualtran:`` source prefix for direct Bloq
+    references. Otherwise, falls back to template-provided counts.
+    """
+    raise ValueError(
+        "QPE Bloq requires a concrete unitary operator. "
+        "Use source='qualtran:module:ClassName' or estimate_from_bloq() "
+        "for direct Bloq input."
+    )
 
 
 @_register_family("chemistry")
 def _try_chemistry_bloq(params: dict[str, Any]) -> Any:
-    """Try to construct a Qualtran chemistry Bloq."""
+    """Try to construct a Qualtran chemistry Bloq.
+
+    Chemistry Bloqs (DoubleFactorizationBlockEncoding, SelectTHC, etc.)
+    require Hamiltonian coefficient data that can't be auto-constructed
+    from template parameters alone.
+    """
     method = str(params.get("method", "double_factorization"))
-    num_orbitals = int(params.get("num_orbitals", 54))
-
-    try:
-        if method == "double_factorization":
-            from qualtran.bloqs.chemistry.df.double_factorization import (
-                DoubleFactorization,
-            )
-            return DoubleFactorization(num_spin_orb=2 * num_orbitals)
-        elif method == "thc":
-            from qualtran.bloqs.chemistry.thc.walk_operator import THCWalkOperator
-            return THCWalkOperator(num_spin_orb=2 * num_orbitals)
-        elif method == "sparse":
-            from qualtran.bloqs.chemistry.sparse.walk_operator import (
-                SparseWalkOperator,
-            )
-            return SparseWalkOperator(num_spin_orb=2 * num_orbitals)
-    except (ImportError, TypeError):
-        pass
-
-    logger.debug(
-        "Could not construct chemistry Bloq (method=%s) from qualtran; "
-        "will fall back to template-provided counts",
-        method,
-    )
     raise ValueError(
-        f"Qualtran chemistry bloqs not available for method={method!r}"
+        f"Chemistry Bloq (method={method!r}) requires Hamiltonian data. "
+        f"Use source='qualtran:module:ClassName' or estimate_from_bloq() "
+        f"for direct Bloq input."
     )
 
 
 @_register_family("simulation")
 def _try_hamiltonian_sim_bloq(params: dict[str, Any]) -> Any:
-    """Try to construct a Qualtran Hamiltonian simulation Bloq."""
+    """Try to construct a Qualtran Hamiltonian simulation Bloq.
+
+    Hamiltonian simulation Bloqs require a concrete Hamiltonian operator
+    that can't be auto-constructed from template parameters alone.
+    """
     method = str(params.get("method", "trotter"))
-    num_qubits = int(params.get("num_qubits", 50))
-
-    try:
-        if method == "trotter":
-            from qualtran.bloqs.hamiltonian_simulation.product_formula import (
-                ProductFormula,
-            )
-            return ProductFormula(num_qubits=num_qubits)
-        elif method in ("qsp", "qubitization"):
-            from qualtran.bloqs.hamiltonian_simulation.qubitization_walk_operator import (
-                QubitizationWalkOperator,
-            )
-            return QubitizationWalkOperator(num_qubits=num_qubits)
-    except (ImportError, TypeError):
-        pass
-
-    logger.debug(
-        "Could not construct Hamiltonian simulation Bloq (method=%s) from qualtran; "
-        "will fall back to template-provided counts",
-        method,
-    )
     raise ValueError(
-        f"Qualtran Hamiltonian simulation bloqs not available for method={method!r}"
+        f"Hamiltonian simulation Bloq (method={method!r}) requires a "
+        f"concrete Hamiltonian. Use source='qualtran:module:ClassName' "
+        f"or estimate_from_bloq() for direct Bloq input."
     )
 
 
 @_register_family("search")
 def _try_grover_bloq(params: dict[str, Any]) -> Any:
-    """Try to construct a Qualtran Grover/amplitude amplification Bloq."""
-    try:
-        from qualtran.bloqs.mcmt.and_bloq import And
+    """Try to construct a Qualtran Grover/amplitude amplification Bloq.
 
-        # Grover's algorithm doesn't have a single dedicated Bloq in qualtran;
-        # the oracle is problem-specific. Use And as a representative primitive.
-        search_space_bits = int(params.get("search_space_bits", 20))
-        return And(cv=(1,) * search_space_bits)
-    except (ImportError, TypeError):
-        pass
-
-    logger.debug(
-        "Could not construct Grover Bloq from qualtran; "
-        "will fall back to template-provided counts"
+    Grover's algorithm requires a problem-specific oracle Bloq.
+    """
+    raise ValueError(
+        "Grover Bloq requires a problem-specific oracle. "
+        "Use source='qualtran:module:ClassName' or estimate_from_bloq() "
+        "for direct Bloq input."
     )
-    raise ValueError("Qualtran Grover/search bloqs not available")

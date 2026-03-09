@@ -84,9 +84,13 @@ class TestEstimateOutputFormats:
         assert result.exit_code == 0
 
     def test_different_qec_scheme(self):
+        # Floquet code requires Majorana hardware
         result = runner.invoke(
             app,
-            ["estimate", "--template", "shor", "--param", "n_bits=64", "--qec", "floquet_code"],
+            [
+                "estimate", "--template", "shor", "--param", "n_bits=64",
+                "--qec", "floquet_code", "--hardware", "maj_ns_e4",
+            ],
         )
         assert result.exit_code == 0
 

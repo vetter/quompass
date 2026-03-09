@@ -46,17 +46,25 @@ def extract_logical_counts(bloq: Any) -> LogicalCounts:
 
 
 def _extract_via_cost_api(bloq: Any) -> LogicalCounts:
-    """Extract counts using Qualtran's get_cost_value (modern API)."""
+    """Extract counts using Qualtran's get_cost_value (modern API).
+
+    GateCounts (returned by QECGatesCost) has attributes:
+    t, toffoli, cswap, and_bloq, clifford, rotation, measurement.
+    The ``total_t_and_ccz_count()`` method decomposes cswap and and_bloq
+    into T/CCZ equivalents.
+    """
     from qualtran.resource_counting import get_cost_value, QECGatesCost, QubitCount
 
     gate_costs = get_cost_value(bloq, QECGatesCost())
     num_qubits = get_cost_value(bloq, QubitCount())
 
-    # QECGatesCost returns a dict-like with t, toffoli, rotation, measurement keys
-    t_count = int(gate_costs.get("t", 0))
-    ccz_count = int(gate_costs.get("toffoli", 0))
-    rotation_count = int(gate_costs.get("rotation", 0))
-    measurement_count = int(gate_costs.get("measurement", 0))
+    # GateCounts is a dataclass with direct attributes (not dict-like).
+    # Use total_t_and_ccz_count() to include cswap/and_bloq decomposition.
+    totals = gate_costs.total_t_and_ccz_count()
+    t_count = int(totals.get("n_t", 0))
+    ccz_count = int(totals.get("n_ccz", 0))
+    rotation_count = int(getattr(gate_costs, "rotation", 0))
+    measurement_count = int(getattr(gate_costs, "measurement", 0))
 
     return LogicalCounts(
         num_qubits=max(1, int(num_qubits)),

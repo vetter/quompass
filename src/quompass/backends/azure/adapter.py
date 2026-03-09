@@ -95,7 +95,9 @@ class AzurePhysicalEstimator(PhysicalEstimator):
         # Call Azure QRE
         try:
             azure_result = azure_logical_counts.estimate(params=params)
-        except Exception as e:
+        except BaseException as e:
+            # qsharp.estimator.EstimatorError inherits from BaseException,
+            # not Exception, so we must catch BaseException here.
             raise RuntimeError(
                 f"Azure QRE estimation failed for algorithm "
                 f"'{algorithm_spec.name}' with hardware "

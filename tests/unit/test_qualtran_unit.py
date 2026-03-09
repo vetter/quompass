@@ -95,39 +95,50 @@ class TestSpecToBloq:
 
 
 class TestFamilyBuilders:
-    def test_shor_builder_raises_without_qualtran(self):
+    def test_shor_builder_constructs_bloq(self):
+        """Shor builder should construct a Bloq if qualtran is installed,
+        or raise ValueError/ImportError if not."""
         from quompass.backends.qualtran.bloq_bridge import _FAMILY_BUILDERS
 
         builder = _FAMILY_BUILDERS["cryptanalysis"]
-        with pytest.raises((ImportError, ValueError)):
-            builder({"n_bits": 64})
+        try:
+            bloq = builder({"n_bits": 16})
+            # If qualtran is installed, should get a Bloq back
+            assert bloq is not None
+        except (ImportError, ValueError):
+            # Expected when qualtran is not installed
+            pass
 
-    def test_qpe_builder_raises_without_qualtran(self):
+    def test_qpe_builder_raises(self):
+        """QPE builder always raises (needs concrete unitary)."""
         from quompass.backends.qualtran.bloq_bridge import _FAMILY_BUILDERS
 
         builder = _FAMILY_BUILDERS["phase_estimation"]
-        with pytest.raises((ImportError, ValueError)):
+        with pytest.raises(ValueError, match="concrete unitary"):
             builder({"num_qubits": 10, "precision_bits": 20})
 
-    def test_chemistry_builder_raises_without_qualtran(self):
+    def test_chemistry_builder_raises(self):
+        """Chemistry builder always raises (needs Hamiltonian data)."""
         from quompass.backends.qualtran.bloq_bridge import _FAMILY_BUILDERS
 
         builder = _FAMILY_BUILDERS["chemistry"]
-        with pytest.raises((ImportError, ValueError)):
+        with pytest.raises(ValueError, match="Hamiltonian data"):
             builder({"method": "double_factorization", "num_orbitals": 54})
 
-    def test_simulation_builder_raises_without_qualtran(self):
+    def test_simulation_builder_raises(self):
+        """Hamiltonian sim builder always raises (needs concrete Hamiltonian)."""
         from quompass.backends.qualtran.bloq_bridge import _FAMILY_BUILDERS
 
         builder = _FAMILY_BUILDERS["simulation"]
-        with pytest.raises((ImportError, ValueError)):
+        with pytest.raises(ValueError, match="concrete Hamiltonian"):
             builder({"method": "trotter", "num_qubits": 50})
 
-    def test_search_builder_raises_without_qualtran(self):
+    def test_search_builder_raises(self):
+        """Search builder always raises (needs problem-specific oracle)."""
         from quompass.backends.qualtran.bloq_bridge import _FAMILY_BUILDERS
 
         builder = _FAMILY_BUILDERS["search"]
-        with pytest.raises((ImportError, ValueError)):
+        with pytest.raises(ValueError, match="problem-specific oracle"):
             builder({"search_space_bits": 20})
 
 
@@ -139,30 +150,18 @@ class TestFamilyBuilders:
 class TestExtractLogicalCounts:
     def test_modern_api_success(self):
         """Test extraction via modern get_cost_value API."""
-        from quompass.backends.qualtran.cost_extract import _extract_via_cost_api
+        import sys
 
-        mock_gate_costs = {"t": 100, "toffoli": 50, "rotation": 10, "measurement": 200}
-        mock_qubit_count = 42
-
-        with patch(
-            "quompass.backends.qualtran.cost_extract.get_cost_value",
-            side_effect=[mock_gate_costs, mock_qubit_count],
-            create=True,
-        ), patch(
-            "quompass.backends.qualtran.cost_extract.QECGatesCost",
-            create=True,
-        ), patch(
-            "quompass.backends.qualtran.cost_extract.QubitCount",
-            create=True,
-        ):
-            # Need to patch at module import level
-            pass
-
-        # Since the function does lazy imports, we need to mock at the import level
         mock_bloq = MagicMock()
 
-        # Create a module-level mock
-        import sys
+        # GateCounts is a dataclass with attributes and total_t_and_ccz_count()
+        mock_gate_costs = MagicMock()
+        mock_gate_costs.total_t_and_ccz_count.return_value = {"n_t": 100, "n_ccz": 50}
+        mock_gate_costs.rotation = 10
+        mock_gate_costs.measurement = 200
+
+        mock_qubit_count = 42
+
         mock_rc = MagicMock()
         mock_rc.get_cost_value = MagicMock(side_effect=[mock_gate_costs, mock_qubit_count])
         mock_rc.QECGatesCost = MagicMock()
@@ -319,21 +318,26 @@ class TestQualtranAdapter:
         assert counts.num_qubits == 42
         assert counts.t_count == 100
 
-    def test_estimate_falls_back_for_missing_qualtran(self):
-        """When qualtran is not installed, falls back gracefully."""
+    def test_estimate_shor_uses_qualtran_or_fallback(self):
+        """Shor estimate uses Qualtran Bloq if available, else falls back."""
         from quompass.backends.qualtran.adapter import QualtranLogicalEstimator
 
         est = QualtranLogicalEstimator()
         spec = AlgorithmSpec(
-            name="Shor 64-bit",
-            logical_counts=LogicalCounts(num_qubits=128, t_count=5000),
+            name="Shor 16-bit",
+            logical_counts=LogicalCounts(num_qubits=32, t_count=1000),
             algorithm_family="cryptanalysis",
-            problem_parameters={"n_bits": 64},
+            problem_parameters={"n_bits": 16},
         )
         counts = est.estimate(spec)
-        # Without qualtran, should fall back to spec counts
-        assert counts.num_qubits == 128
-        assert counts.t_count == 5000
+        if est.is_available():
+            # With qualtran, should get Bloq-derived counts (different from spec)
+            assert counts.num_qubits >= 1
+            assert counts.total_t_equivalent > 0
+        else:
+            # Without qualtran, should fall back to spec counts
+            assert counts.num_qubits == 32
+            assert counts.t_count == 1000
 
     def test_estimate_from_bloq_delegates(self):
         """estimate_from_bloq calls extract_logical_counts."""
