@@ -23,9 +23,18 @@
   - [Custom Hardware YAML](#custom-hardware-yaml)
   - [Custom QEC YAML](#custom-qec-yaml)
   - [Exporting Results](#exporting-results)
+- [Walkthrough: Chemistry Resource Estimation](#walkthrough-chemistry-resource-estimation)
+  - [Step 1: Define the Problem](#step-1-define-the-problem)
+  - [Step 2: Run a Single Estimate](#step-2-run-a-single-estimate)
+  - [Step 3: Compare Methods](#step-3-compare-methods)
+  - [Step 4: Explore the Design Space](#step-4-explore-the-design-space)
+  - [Step 5: Analyze Sensitivity](#step-5-analyze-sensitivity)
+  - [Step 6: Create a Custom QEC Scheme](#step-6-create-a-custom-qec-scheme)
+  - [Step 7: Export and Reproduce](#step-7-export-and-reproduce)
 - [CLI Reference](#cli-reference)
   - [quompass estimate](#quompass-estimate)
   - [quompass explore](#quompass-explore)
+  - [quompass optimize](#quompass-optimize)
   - [quompass catalog](#quompass-catalog)
 - [Plugin Architecture](#plugin-architecture)
 - [Hardware Presets Reference](#hardware-presets-reference)
@@ -657,6 +666,307 @@ save_yaml(result.summary_dict(), "summary.yaml")
 ```
 
 The exported YAML includes nested sections for summary, breakdown, logical qubit, T factory, error budget, error rates, and provenance (algorithm spec, hardware model, QEC scheme).
+
+---
+
+## Walkthrough: Chemistry Resource Estimation
+
+This walkthrough guides you through a complete resource estimation workflow for quantum chemistry — one of the most promising near-term applications of fault-tolerant quantum computers. We will estimate the resources needed to simulate the electronic structure of a molecule, compare simulation methods and hardware targets, explore the design space, and analyze what matters most.
+
+The scenario: you are planning a quantum chemistry experiment to simulate a molecule with 54 spatial orbitals (roughly the size of the FeMo-co active space in nitrogenase, a benchmark for quantum advantage in chemistry). You want to answer:
+
+1. How many physical qubits and how much time will it take?
+2. Which simulation method is most efficient?
+3. Which hardware target is most practical?
+4. How sensitive are the results to the error budget?
+
+### Step 1: Define the Problem
+
+Start by creating an `AlgorithmSpec` using the chemistry template. The template computes logical resource counts based on published models from Lee et al. (2021) and Berry et al. (2019).
+
+```python
+import quompass
+from quompass.templates.chemistry import chemistry
+
+# FeMo-co active space: 54 spatial orbitals, 54 electrons
+spec = chemistry(num_orbitals=54, num_electrons=54, method="double_factorization")
+
+# Inspect the logical resource counts
+lc = spec.logical_counts
+print(f"Algorithm: {spec.name}")
+print(f"Logical qubits: {lc.num_qubits}")
+print(f"CCZ/Toffoli gates: {lc.ccz_count:,}")
+print(f"T-equivalent gates: {lc.total_t_equivalent:,}")
+```
+
+The `LogicalCounts` object is the portable interchange format — it captures everything the physical estimation stage needs, independent of which backend produced it.
+
+### Step 2: Run a Single Estimate
+
+Run a physical resource estimate using the default hardware and QEC settings:
+
+```python
+result = quompass.estimate(spec)
+
+# Print a compact summary table
+from quompass.viz.summary import print_estimate_summary
+print_estimate_summary(result)
+```
+
+This produces a Rich table showing physical qubits, runtime, code distance, error budget, and other key metrics. For a more detailed breakdown including logical qubit properties and T factory details:
+
+```python
+from quompass.viz.summary import print_estimate_detail
+print_estimate_detail(result)
+```
+
+You can also access any field programmatically:
+
+```python
+print(f"Physical qubits: {result.total_physical_qubits:,}")
+print(f"  Algorithm:    {result.physical_qubits_for_algorithm:,}")
+print(f"  T factories:  {result.physical_qubits_for_t_factories:,}")
+print(f"Runtime: {result.runtime_human}")
+print(f"Code distance: {result.logical_qubit.code_distance}")
+print(f"Logical error rate: {result.logical_qubit.logical_error_rate:.2e}")
+```
+
+Or from the CLI:
+
+```bash
+quompass estimate --template chemistry --param num_orbitals=54 --param num_electrons=54
+quompass estimate --template chemistry --param num_orbitals=54 --output detail
+```
+
+### Step 3: Compare Methods
+
+Quantum chemistry has three main simulation approaches with different resource trade-offs. Let's compare them:
+
+```python
+methods = ["double_factorization", "thc", "sparse"]
+
+for method in methods:
+    spec = chemistry(num_orbitals=54, num_electrons=54, method=method)
+    result = quompass.estimate(spec, hardware="gate_ns_e4")
+
+    print(f"\n{method}:")
+    print(f"  Qubits: {result.total_physical_qubits:>12,}")
+    print(f"  Runtime: {result.runtime_human:>10}")
+    print(f"  T states: {result.num_t_states:>12,}")
+    print(f"  Code distance: {result.logical_qubit.code_distance}")
+```
+
+You'll see that double factorization and THC typically produce significantly different physical qubit counts, even for the same molecule, because the underlying gate counts differ substantially. This is exactly the kind of comparison that makes quompass useful — the same physical estimation pipeline applied consistently across different algorithmic approaches.
+
+### Step 4: Explore the Design Space
+
+Now let's systematically explore how the results change across hardware targets, QEC schemes, and error budgets:
+
+```python
+from quompass.exploration import ExplorationSpace, explore
+
+space = ExplorationSpace(
+    algorithm=chemistry(num_orbitals=54, method="double_factorization"),
+    hardware=["gate_ns_e3", "gate_ns_e4", "gate_us_e3"],
+    qec=["surface_code", "color_code"],
+    error_budgets=[0.01, 0.001, 0.0001],
+)
+
+print(f"Evaluating {space.size} combinations...")
+result = explore(space)
+
+# Print results table
+from quompass.viz.exploration import print_exploration_table
+print_exploration_table(result)
+
+print(f"\n{result.num_succeeded}/{space.size} succeeded")
+```
+
+Some combinations will fail (e.g., if the physical error rate exceeds the QEC threshold). These are recorded as failed points — they don't crash the run.
+
+Extract the Pareto front to see which configurations offer the best trade-offs between physical qubits and runtime:
+
+```python
+front = result.pareto_front()
+
+from quompass.viz.exploration import print_pareto_table
+print_pareto_table(front)
+```
+
+The Pareto front shows configurations where no other configuration is simultaneously better in both qubits and runtime. This helps you understand the fundamental trade-off: faster hardware may need more qubits, and vice versa.
+
+From the CLI:
+
+```bash
+quompass explore --template chemistry --param num_orbitals=54 \
+    --hardware gate_ns_e3,gate_ns_e4,gate_us_e3 \
+    --qec surface_code,color_code \
+    --error-budget 0.01,0.001,0.0001
+
+# With Pareto front output
+quompass explore --template chemistry --param num_orbitals=54 \
+    --hardware gate_ns_e3,gate_ns_e4 \
+    --error-budget 0.01,0.001,0.0001 \
+    --output pareto
+```
+
+### Step 5: Analyze Sensitivity
+
+Which parameter has the biggest impact on physical qubit count? Sensitivity analysis tells you where to focus your engineering effort:
+
+```python
+sens = result.sensitivity(metric="total_physical_qubits")
+
+from quompass.viz.exploration import print_sensitivity_table
+print_sensitivity_table(sens)
+
+print(f"\nMost sensitive dimension: {sens.most_sensitive_dimension()}")
+```
+
+This performs a one-at-a-time (OAT) analysis: for each dimension (hardware, QEC, error budget), it varies that dimension while holding the others at a baseline, and reports the percentage change in the target metric.
+
+Typical findings for chemistry:
+- **Hardware quality** (error rate) usually has the largest impact, because lower error rates mean smaller code distances and fewer physical qubits per logical qubit.
+- **Error budget** has a moderate impact — tighter budgets require higher code distances.
+- **QEC scheme** matters, but the difference between surface code and color code is typically smaller than the hardware effect.
+
+You can also analyze sensitivity for runtime:
+
+```python
+sens_time = result.sensitivity(metric="runtime_seconds")
+print_sensitivity_table(sens_time)
+```
+
+### Step 6: Create a Custom QEC Scheme
+
+Suppose you're researching a new qLDPC code that promises linear qubit overhead instead of quadratic. You can define it using `FormulaQEC` and immediately compare it against surface code:
+
+```python
+from quompass import FormulaQEC
+
+# Hypothetical qLDPC code with linear qubit scaling
+my_qldpc = FormulaQEC(
+    name="my_qldpc",
+    threshold=0.01,         # Same threshold as surface code
+    prefactor=0.03,         # Same prefactor
+    qubits_formula="12 * d",           # Linear in d (vs 2*d^2 for surface code)
+    cycle_time_formula="6 * t_2q * d", # Faster cycles
+)
+
+# Compare against surface code
+spec = chemistry(num_orbitals=54, method="double_factorization")
+
+for qec_name, qec_obj in [("surface_code", "surface_code"), ("my_qldpc", my_qldpc)]:
+    r = quompass.estimate(spec, hardware="gate_ns_e4", qec=qec_obj)
+    print(f"{qec_name}: {r.total_physical_qubits:,} qubits, {r.runtime_human}")
+```
+
+The linear qubit scaling of the hypothetical qLDPC code should produce dramatically fewer physical qubits. This kind of what-if analysis is central to QEC research — you can quickly assess the practical impact of theoretical improvements.
+
+You can also define the QEC scheme in YAML for reproducibility:
+
+```yaml
+# my_qldpc.yaml
+name: my_qldpc
+threshold: 0.01
+prefactor: 0.03
+qubits_formula: "12 * d"
+cycle_time_formula: "6 * t_2q * d"
+```
+
+```bash
+quompass estimate --template chemistry --param num_orbitals=54 \
+    --hardware gate_ns_e4 --qec my_qldpc.yaml
+```
+
+### Step 7: Export and Reproduce
+
+Save your results for later analysis or sharing:
+
+```python
+from quompass.io import save_estimate, save_yaml
+
+# Save full result as YAML
+spec = chemistry(num_orbitals=54, method="double_factorization")
+result = quompass.estimate(spec, hardware="gate_ns_e4")
+save_estimate(result, "chemistry_df_54orb.yaml")
+
+# Save the algorithm spec for reproducibility
+save_yaml(spec.to_dict(), "chemistry_spec.yaml")
+```
+
+The saved YAML contains everything needed to understand and reproduce the estimate: algorithm parameters, hardware model, QEC scheme, error budget, and all computed results.
+
+You can also export from the CLI:
+
+```bash
+# YAML output to file
+quompass estimate --template chemistry --param num_orbitals=54 \
+    --hardware gate_ns_e4 --output yaml > chemistry_result.yaml
+
+# JSON output (flat summary, good for scripts)
+quompass estimate --template chemistry --param num_orbitals=54 \
+    --hardware gate_ns_e4 --output json
+```
+
+### Putting It All Together
+
+Here is a complete script that runs the full workflow:
+
+```python
+"""Chemistry resource estimation workflow.
+
+Estimates physical resources for simulating a 54-orbital molecule
+using different methods, hardware targets, and QEC schemes.
+"""
+
+import quompass
+from quompass.templates.chemistry import chemistry
+from quompass.exploration import ExplorationSpace, explore
+from quompass.viz.summary import print_estimate_summary
+from quompass.viz.exploration import (
+    print_exploration_table,
+    print_pareto_table,
+    print_sensitivity_table,
+)
+
+# --- 1. Single estimate ---
+spec = chemistry(num_orbitals=54, num_electrons=54, method="double_factorization")
+result = quompass.estimate(spec, hardware="gate_ns_e4")
+print("=== Single Estimate ===")
+print_estimate_summary(result)
+
+# --- 2. Method comparison ---
+print("\n=== Method Comparison (gate_ns_e4) ===")
+for method in ["double_factorization", "thc", "sparse"]:
+    s = chemistry(num_orbitals=54, method=method)
+    r = quompass.estimate(s, hardware="gate_ns_e4")
+    print(f"  {method:25s}  {r.total_physical_qubits:>10,} qubits  {r.runtime_human:>10}")
+
+# --- 3. Design space exploration ---
+print("\n=== Design Space Exploration ===")
+space = ExplorationSpace(
+    algorithm=spec,
+    hardware=["gate_ns_e3", "gate_ns_e4", "gate_us_e3"],
+    qec=["surface_code"],
+    error_budgets=[0.01, 0.001, 0.0001],
+)
+er = explore(space)
+print_exploration_table(er)
+
+# --- 4. Pareto front ---
+print("\n=== Pareto Front ===")
+front = er.pareto_front()
+print_pareto_table(front)
+
+# --- 5. Sensitivity analysis ---
+print("\n=== Sensitivity Analysis ===")
+sens = er.sensitivity(metric="total_physical_qubits")
+print_sensitivity_table(sens)
+print(f"Most sensitive: {sens.most_sensitive_dimension()}")
+```
+
+This script demonstrates the full power of quompass: from a single estimate to systematic exploration to actionable insights about where to invest engineering effort.
 
 ---
 
