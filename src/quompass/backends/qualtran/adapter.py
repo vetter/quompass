@@ -7,6 +7,7 @@ gracefully reports unavailability when qualtran is not installed.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from quompass.backends.base import LogicalEstimator
@@ -14,6 +15,8 @@ from quompass.core.algorithm import AlgorithmSpec, LogicalCounts
 
 if TYPE_CHECKING:
     pass
+
+logger = logging.getLogger(__name__)
 
 
 class QualtranLogicalEstimator(LogicalEstimator):
@@ -57,9 +60,19 @@ class QualtranLogicalEstimator(LogicalEstimator):
 
         try:
             bloq = spec_to_bloq(spec)
-            return extract_logical_counts(bloq)
-        except (ImportError, ValueError):
+            counts = extract_logical_counts(bloq)
+            logger.info(
+                "Qualtran analysis for '%s': %d qubits, %d T-equiv",
+                spec.name, counts.num_qubits, counts.total_t_equivalent,
+            )
+            return counts
+        except (ImportError, ValueError) as exc:
             # Cannot map to Bloq -- fall back to existing counts
+            logger.info(
+                "Qualtran Bloq mapping unavailable for '%s' "
+                "(family=%r): %s. Using template-provided counts.",
+                spec.name, spec.algorithm_family, exc,
+            )
             return spec.logical_counts
 
     def estimate_from_bloq(self, bloq: Any) -> LogicalCounts:

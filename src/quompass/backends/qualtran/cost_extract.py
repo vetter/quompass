@@ -9,12 +9,15 @@ qualtran is not installed.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from quompass.core.algorithm import LogicalCounts
 
 if TYPE_CHECKING:
     pass  # qualtran types referenced in docstrings only
+
+logger = logging.getLogger(__name__)
 
 
 def extract_logical_counts(bloq: Any) -> LogicalCounts:
@@ -34,7 +37,11 @@ def extract_logical_counts(bloq: Any) -> LogicalCounts:
     """
     try:
         return _extract_via_cost_api(bloq)
-    except Exception:
+    except Exception as exc:
+        logger.debug(
+            "Modern cost API failed for %s: %s. Trying legacy call_graph.",
+            type(bloq).__name__, exc,
+        )
         return _extract_via_call_graph(bloq)
 
 
@@ -52,7 +59,7 @@ def _extract_via_cost_api(bloq: Any) -> LogicalCounts:
     measurement_count = int(gate_costs.get("measurement", 0))
 
     return LogicalCounts(
-        num_qubits=int(num_qubits),
+        num_qubits=max(1, int(num_qubits)),
         t_count=t_count,
         ccz_count=ccz_count,
         rotation_count=rotation_count,
@@ -69,12 +76,15 @@ def _extract_via_call_graph(bloq: Any) -> LogicalCounts:
 
     t_count = 0
     ccz_count = 0
+    rotation_count = 0
     for callee, count in callee_counts:
         callee_name = type(callee).__name__
         if isinstance(callee, TGate) or callee_name == "TGate":
             t_count += count
         elif isinstance(callee, Toffoli) or callee_name in ("Toffoli", "CCZ"):
             ccz_count += count
+        elif callee_name in ("Rz", "Ry", "Rx", "ZPowGate", "ArbitraryClifford"):
+            rotation_count += count
 
     # Estimate qubits from bloq signature
     num_qubits = _count_qubits_from_signature(bloq)
@@ -83,6 +93,7 @@ def _extract_via_call_graph(bloq: Any) -> LogicalCounts:
         num_qubits=num_qubits,
         t_count=t_count,
         ccz_count=ccz_count,
+        rotation_count=rotation_count,
     )
 
 
@@ -96,5 +107,9 @@ def _count_qubits_from_signature(bloq: Any) -> int:
                 size *= dim
             total += reg.bitsize * size
     except Exception:
-        total = 1  # Fallback: at least 1 qubit
-    return total
+        logger.debug(
+            "Could not extract qubit count from %s signature; defaulting to 1",
+            type(bloq).__name__,
+        )
+        total = 0
+    return max(1, total)  # At least 1 qubit
