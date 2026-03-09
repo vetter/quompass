@@ -24,19 +24,21 @@ if TYPE_CHECKING:
 
 
 def parse_result(
-    azure_result: dict[str, Any],
+    azure_result: dict[str, Any] | Any,
     logical_counts: LogicalCounts,
     hardware: HardwareModel,
     qec: QECScheme,
     error_budget: ErrorBudget,
     algorithm_spec: AlgorithmSpec,
 ) -> PhysicalEstimate:
-    """Parse Azure QRE output dict into a PhysicalEstimate.
+    """Parse Azure QRE output into a PhysicalEstimate.
 
     Parameters
     ----------
-    azure_result : dict
-        The raw dict returned by ``qsharp.estimate()``.
+    azure_result
+        The result returned by ``LogicalCounts.estimate()`` or
+        ``qsharp.estimate()``.  May be an ``EstimatorResult`` object
+        or a plain dict.
     logical_counts : LogicalCounts
     hardware : HardwareModel
     qec : QECScheme
@@ -46,11 +48,40 @@ def parse_result(
     Returns
     -------
     PhysicalEstimate
+
+    Raises
+    ------
+    ValueError
+        If critical fields are missing from the Azure result.
     """
-    phys = azure_result.get("physicalCounts", {})
+    # EstimatorResult objects support dict-style access; convert if needed
+    if isinstance(azure_result, dict):
+        result_data = azure_result
+    elif hasattr(azure_result, "keys") and callable(azure_result.keys):
+        # EstimatorResult or other dict-like object
+        try:
+            result_data = dict(azure_result)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"Failed to convert Azure result to dict: {e}. "
+                f"Result type: {type(azure_result).__name__}"
+            ) from e
+    else:
+        raise ValueError(
+            f"Unexpected Azure result type: {type(azure_result).__name__}. "
+            f"Expected dict or EstimatorResult."
+        )
+
+    if "physicalCounts" not in result_data:
+        raise ValueError(
+            "Azure QRE result missing 'physicalCounts' field. "
+            f"Result keys: {list(result_data.keys())}"
+        )
+
+    phys = result_data["physicalCounts"]
     breakdown = phys.get("breakdown", {})
-    lq = azure_result.get("logicalQubit", {})
-    tf = azure_result.get("tfactory", {})
+    lq = result_data.get("logicalQubit", {})
+    tf = result_data.get("tfactory", {})
 
     # Physical counts
     total_physical_qubits = int(phys.get("physicalQubits", 0))
