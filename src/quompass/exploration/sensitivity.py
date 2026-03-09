@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -142,7 +143,7 @@ def _find_point(
         if (
             pt.hardware_name == hw_name
             and pt.qec_name == qec_name
-            and abs(pt.error_budget - error_budget) < 1e-15
+            and math.isclose(pt.error_budget, error_budget, rel_tol=1e-9)
         ):
             return pt
     return None

@@ -65,6 +65,14 @@ class QECScheme(ABC):
         """Time (seconds) for one logical cycle at the given code distance."""
         ...
 
+    @staticmethod
+    def _validate_code_distance(code_distance: int) -> None:
+        """Validate that code distance is a positive odd integer >= 3."""
+        if code_distance < 3 or code_distance % 2 == 0:
+            raise ValueError(
+                f"code_distance must be an odd integer >= 3, got {code_distance}"
+            )
+
     def min_code_distance(
         self,
         target_error_rate: float,
@@ -112,14 +120,17 @@ class SurfaceCode(QECScheme):
         return 0.03
 
     def logical_error_rate(self, code_distance: int, physical_error_rate: float) -> float:
+        self._validate_code_distance(code_distance)
         a = self.crossing_prefactor
         p_star = self.error_correction_threshold
         return a * (physical_error_rate / p_star) ** ((code_distance + 1) / 2)
 
     def physical_qubits_per_logical(self, code_distance: int) -> int:
+        self._validate_code_distance(code_distance)
         return 2 * code_distance * code_distance
 
     def logical_cycle_time(self, code_distance: int, qubit_params: QubitParams) -> float:
+        self._validate_code_distance(code_distance)
         return (
             4 * qubit_params.two_qubit_gate_time
             + 2 * qubit_params.one_qubit_measurement_time
@@ -148,14 +159,17 @@ class FloquetCode(QECScheme):
         return 0.07
 
     def logical_error_rate(self, code_distance: int, physical_error_rate: float) -> float:
+        self._validate_code_distance(code_distance)
         a = self.crossing_prefactor
         p_star = self.error_correction_threshold
         return a * (physical_error_rate / p_star) ** ((code_distance + 1) / 2)
 
     def physical_qubits_per_logical(self, code_distance: int) -> int:
+        self._validate_code_distance(code_distance)
         return 4 * code_distance * code_distance + 8 * (code_distance - 1)
 
     def logical_cycle_time(self, code_distance: int, qubit_params: QubitParams) -> float:
+        self._validate_code_distance(code_distance)
         return 3 * qubit_params.one_qubit_measurement_time * code_distance
 
 
@@ -331,6 +345,7 @@ class FormulaQEC(QECScheme):
         return self._distance_coefficient_power
 
     def logical_error_rate(self, code_distance: int, physical_error_rate: float) -> float:
+        self._validate_code_distance(code_distance)
         a = self._prefactor
         p_star = self._threshold
         k = self._distance_coefficient_power
@@ -338,10 +353,12 @@ class FormulaQEC(QECScheme):
         return a * (code_distance ** k) * (ratio ** ((code_distance + 1) / 2))
 
     def physical_qubits_per_logical(self, code_distance: int) -> int:
+        self._validate_code_distance(code_distance)
         result = _safe_eval(self._qubits_formula, {"d": float(code_distance)})
         return int(math.ceil(result))
 
     def logical_cycle_time(self, code_distance: int, qubit_params: QubitParams) -> float:
+        self._validate_code_distance(code_distance)
         t_jm = qubit_params.two_qubit_joint_measurement_time or 0.0
         variables = {
             "d": float(code_distance),

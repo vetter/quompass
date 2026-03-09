@@ -45,9 +45,9 @@ def discover_logical_estimators() -> dict[str, LogicalEstimator]:
                     instance = cls()
                     estimators[ep.name] = instance
                 except Exception as e:
-                    logger.debug("Failed to load logical estimator %s: %s", ep.name, e)
-    except Exception:
-        pass
+                    logger.warning("Failed to load logical estimator %s: %s", ep.name, e)
+    except Exception as e:
+        logger.warning("Failed to discover logical estimator entry_points: %s", e)
 
     return estimators
 
@@ -73,9 +73,9 @@ def discover_physical_estimators() -> dict[str, PhysicalEstimator]:
                     instance = cls()
                     estimators[ep.name] = instance
                 except Exception as e:
-                    logger.debug("Failed to load physical estimator %s: %s", ep.name, e)
-    except Exception:
-        pass
+                    logger.warning("Failed to load physical estimator %s: %s", ep.name, e)
+    except Exception as e:
+        logger.warning("Failed to discover physical estimator entry_points: %s", e)
 
     return estimators
 

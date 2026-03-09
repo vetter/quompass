@@ -31,6 +31,41 @@ class QubitParams:
     two_qubit_joint_measurement_time: Optional[float] = None
     two_qubit_joint_measurement_error_rate: Optional[float] = None
 
+    def __post_init__(self) -> None:
+        for name in (
+            "one_qubit_gate_time", "two_qubit_gate_time",
+            "one_qubit_measurement_time", "t_gate_time",
+        ):
+            val = getattr(self, name)
+            if val <= 0:
+                raise ValueError(f"{name} must be positive, got {val}")
+        for name in (
+            "one_qubit_gate_error_rate", "two_qubit_gate_error_rate",
+            "one_qubit_measurement_error_rate", "t_gate_error_rate",
+        ):
+            val = getattr(self, name)
+            if not (0 < val < 1):
+                raise ValueError(f"{name} must be in (0, 1), got {val}")
+        if self.idle_error_rate is not None and not (0 < self.idle_error_rate < 1):
+            raise ValueError(
+                f"idle_error_rate must be in (0, 1), got {self.idle_error_rate}"
+            )
+        jm_time = self.two_qubit_joint_measurement_time
+        jm_err = self.two_qubit_joint_measurement_error_rate
+        if (jm_time is None) != (jm_err is None):
+            raise ValueError(
+                "two_qubit_joint_measurement_time and "
+                "two_qubit_joint_measurement_error_rate must both be set or both be None"
+            )
+        if jm_time is not None and jm_time <= 0:
+            raise ValueError(
+                f"two_qubit_joint_measurement_time must be positive, got {jm_time}"
+            )
+        if jm_err is not None and not (0 < jm_err < 1):
+            raise ValueError(
+                f"two_qubit_joint_measurement_error_rate must be in (0, 1), got {jm_err}"
+            )
+
     def to_dict(self) -> dict:
         """Serialize to dictionary."""
         d = {

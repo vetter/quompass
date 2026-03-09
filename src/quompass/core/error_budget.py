@@ -53,6 +53,14 @@ class ErrorBudget:
     distillation: Optional[float] = None
     rotation: Optional[float] = None
 
+    def __post_init__(self) -> None:
+        if not (0 < self.total < 1):
+            raise ValueError(f"total error budget must be in (0, 1), got {self.total}")
+        for name in ("logical", "distillation", "rotation"):
+            val = getattr(self, name)
+            if val is not None and val < 0:
+                raise ValueError(f"{name} must be non-negative, got {val}")
+
     def to_dict(self) -> dict:
         """Serialize to dictionary."""
         d: dict = {"total": self.total}

@@ -27,6 +27,21 @@ class LogicalCounts:
     clifford_count: int = 0
     circuit_depth: Optional[int] = None
 
+    def __post_init__(self) -> None:
+        if self.num_qubits < 1:
+            raise ValueError(f"num_qubits must be >= 1, got {self.num_qubits}")
+        for name in (
+            "t_count", "rotation_count", "rotation_depth",
+            "ccz_count", "measurement_count", "clifford_count",
+        ):
+            val = getattr(self, name)
+            if val < 0:
+                raise ValueError(f"{name} must be non-negative, got {val}")
+        if self.circuit_depth is not None and self.circuit_depth < 0:
+            raise ValueError(
+                f"circuit_depth must be non-negative, got {self.circuit_depth}"
+            )
+
     @property
     def total_t_equivalent(self) -> int:
         """Total T-equivalent non-Clifford cost.
