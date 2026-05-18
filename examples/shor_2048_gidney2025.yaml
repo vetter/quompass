@@ -1,0 +1,42 @@
+# Algorithm spec for Shor's factoring of a 2048-bit RSA integer.
+# Logical circuit from Gidney 2025, "How to factor 2048 bit RSA integers
+# with less than a million noisy qubits" (arXiv:2505.15917).
+#
+# Logical resource figures are as cited by Cain et al. 2026 ("Shor's
+# algorithm is possible with as few as 10,000 reconfigurable atomic
+# qubits", arXiv:2603.28627), Fig. 3a: 1,399 logical qubits and
+# 6.5e9 Toffoli gates. This is the logical circuit that the Cain et al.
+# space-efficient and balanced architectures re-cost at the physical layer.
+#
+# Usage:
+#
+#   # Default surface code + superconducting hardware -- the contrast case.
+#   # 15-to-1 distillation factories dominate: ~16 million physical qubits.
+#   quompass estimate --spec examples/shor_2048_gidney2025.yaml
+#
+#   # Cain et al. neutral-atom architecture: high-rate lifted-product qLDPC
+#   # code with transversal magic states. ~11k physical qubits, ~226 days,
+#   # reproducing the paper's "space-efficient" RSA-2048 point (11,033 atoms).
+#   quompass estimate --spec examples/shor_2048_gidney2025.yaml \
+#       --hardware examples/neutral_atom.yaml \
+#       --qec examples/lp_qldpc.yaml
+
+name: "Shor's factoring (RSA-2048, Gidney 2025 circuit)"
+description: >
+  Factor a 2048-bit RSA integer using the logical circuit of Gidney 2025
+  (arXiv:2505.15917). Dominated by Toffoli gates from windowed modular
+  arithmetic -- ripple-carry adders and unary table lookups.
+algorithm_family: cryptanalysis
+source: "literature:gidney-2025 (arXiv:2505.15917)"
+
+problem_parameters:
+  n_bits: 2048
+
+logical_counts:
+  num_qubits: 1399       # logical qubits (Cain et al. Fig. 3a)
+  ccz_count: 6500000000  # 6.5e9 Toffoli gates; Toffoli == CCZ in magic-state cost
+  t_count: 0
+  rotation_count: 0      # windowed/approximate QFT folded into the Toffoli cost
+  rotation_depth: 0
+  measurement_count: 0   # mid-circuit measurements not separately tabulated in source
+  clifford_count: 0

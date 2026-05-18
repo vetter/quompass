@@ -1,0 +1,30 @@
+# Hardware model for a reconfigurable neutral-atom (Rydberg) processor.
+#
+# Parameters reflect the architecture assumed by Cain et al. 2026,
+# "Shor's algorithm is possible with as few as 10,000 reconfigurable
+# atomic qubits" (arXiv:2603.28627): a physical (entangling-gate) error
+# rate of p = 0.1% and a ~1 ms stabilizer-measurement cycle.
+#
+# Usage (with the lifted-product qLDPC scheme):
+#   quompass estimate --spec examples/shor_2048_gidney2025.yaml \
+#       --hardware examples/neutral_atom.yaml \
+#       --qec examples/lp_qldpc.yaml
+
+name: neutral_atom_rydberg
+description: >
+  Reconfigurable neutral-atom (Rydberg) processor, p = 0.1% two-qubit
+  gate error, ~1 ms stabilizer round (Cain et al. 2026, arXiv:2603.28627).
+
+qubit_params:
+  name: neutral_atom_rydberg
+  instruction_set: gate_based
+  one_qubit_gate_time: 1.0e-6           # local Raman single-qubit gate, ~1 us
+  two_qubit_gate_time: 0.5e-6           # Rydberg CZ entangling gate, ~0.5 us
+  one_qubit_measurement_time: 1.0e-3    # effective stabilizer round: fluorescence
+                                        # imaging + atom rearrangement, ~1 ms
+  t_gate_time: 0.5e-6                   # unused under transversal magic states;
+                                        # set to the entangling-gate time
+  one_qubit_gate_error_rate: 1.0e-4
+  two_qubit_gate_error_rate: 1.0e-3     # p = 0.1% -- the paper's working point
+  one_qubit_measurement_error_rate: 1.0e-3
+  t_gate_error_rate: 1.0e-3             # unused under transversal magic states

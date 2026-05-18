@@ -204,7 +204,7 @@ Abstract base class. Every QEC scheme must implement:
 | `FloquetCode` | 4d^2 + 8(d-1) | 1% | 3 * t_meas * d |
 | `color_code()` | ceil(4.5 * d^2) | 0.77% | 10 * t_2q * d |
 
-**FormulaQEC** enables user-defined codes via YAML without writing Python. Formulas are evaluated with AST-safe parsing (no `eval()`). Variables: `d` (distance), `t_1q`, `t_2q`, `t_meas`, `t_jm` (gate times).
+**FormulaQEC** enables user-defined codes via YAML without writing Python. Formulas are evaluated with AST-safe parsing (no `eval()`). Variables: `d` (distance), `t_1q`, `t_2q`, `t_meas`, `t_jm` (gate times). The optional `transversal_magic_states` flag marks codes that apply T/CCZ transversally (high-rate qLDPC), suppressing the distillation-factory model.
 
 ```yaml
 # Example custom QEC definition
@@ -347,6 +347,9 @@ The built-in `AnalyticalPhysicalEstimator` implements the core estimation math, 
    - Output error per round: `35 * p_in^3`
    - Cascade up to 5 rounds until target error met
    - Factory count sized to T-state production rate
+   - Skipped entirely when `qec.transversal_magic_states` is `True`: magic
+     states are produced in-place (cultivation), so a CCZ counts as one
+     logical cycle rather than four T equivalents and there is no factory
 7. **Compute runtime** → `logical_depth * logical_cycle_time(d)`
 8. **Assemble PhysicalEstimate** with full breakdown
 

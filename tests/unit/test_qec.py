@@ -74,6 +74,14 @@ class TestFloquetCode:
         assert fc.physical_qubits_per_logical(5) == 132
 
 
+class TestTransversalMagicStates:
+    def test_surface_code_requires_distillation(self):
+        assert SurfaceCode().transversal_magic_states is False
+
+    def test_floquet_code_requires_distillation(self):
+        assert FloquetCode().transversal_magic_states is False
+
+
 class TestGetQECScheme:
     def test_surface_code(self):
         scheme = get_qec_scheme("surface_code")

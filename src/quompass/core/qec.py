@@ -45,6 +45,22 @@ class QECScheme(ABC):
         """Crossing prefactor 'a' in the logical error rate formula."""
         ...
 
+    @property
+    def transversal_magic_states(self) -> bool:
+        """Whether non-Clifford gates are applied transversally on this code.
+
+        When False (the default), non-Clifford gates (T, CCZ/Toffoli) require
+        magic-state distillation factories. Surface and Floquet codes return
+        False.
+
+        When True, T and CCZ/Toffoli gates are native transversal logical
+        operations: there is no separate distillation factory, and a CCZ is
+        one logical cycle rather than four T-gate equivalents. This models
+        high-rate qLDPC architectures with magic-state cultivation, such as
+        the lifted-product codes of Cain et al. (arXiv:2603.28627).
+        """
+        return False
+
     @abstractmethod
     def logical_error_rate(self, code_distance: int, physical_error_rate: float) -> float:
         """Compute logical error rate for given code distance and physical error rate.
@@ -309,6 +325,7 @@ class FormulaQEC(QECScheme):
         qubits_formula: str,
         cycle_time_formula: str,
         distance_coefficient_power: float = 0.0,
+        transversal_magic_states: bool = False,
     ) -> None:
         self._name = name
         self._threshold = threshold
@@ -316,6 +333,7 @@ class FormulaQEC(QECScheme):
         self._qubits_formula = qubits_formula
         self._cycle_time_formula = cycle_time_formula
         self._distance_coefficient_power = distance_coefficient_power
+        self._transversal_magic_states = transversal_magic_states
         # Validate formulas at construction time (catch syntax errors early)
         _safe_eval(qubits_formula, {"d": 3})
         _safe_eval(cycle_time_formula, {"d": 3, "t_1q": 1, "t_2q": 1, "t_meas": 1, "t_jm": 0})
@@ -343,6 +361,10 @@ class FormulaQEC(QECScheme):
     @property
     def distance_coefficient_power(self) -> float:
         return self._distance_coefficient_power
+
+    @property
+    def transversal_magic_states(self) -> bool:
+        return self._transversal_magic_states
 
     def logical_error_rate(self, code_distance: int, physical_error_rate: float) -> float:
         self._validate_code_distance(code_distance)
@@ -378,6 +400,7 @@ class FormulaQEC(QECScheme):
             "qubits_formula": self._qubits_formula,
             "cycle_time_formula": self._cycle_time_formula,
             "distance_coefficient_power": self._distance_coefficient_power,
+            "transversal_magic_states": self._transversal_magic_states,
         }
 
     @classmethod
@@ -390,6 +413,7 @@ class FormulaQEC(QECScheme):
             qubits_formula=d["qubits_formula"],
             cycle_time_formula=d["cycle_time_formula"],
             distance_coefficient_power=d.get("distance_coefficient_power", 0.0),
+            transversal_magic_states=d.get("transversal_magic_states", False),
         )
 
 

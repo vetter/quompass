@@ -60,13 +60,24 @@ class AnalyticalPhysicalEstimator(PhysicalEstimator):
     ) -> PhysicalEstimate:
         budget = error_budget.resolve(has_rotations=logical_counts.has_rotations)
         p = hardware.qubit_params.worst_case_clifford_error
+        transversal = qec.transversal_magic_states
 
         n_logical = logical_counts.num_qubits
-        n_t_states = logical_counts.total_t_equivalent
+        if transversal:
+            # Transversal architecture: T and CCZ/Toffoli are native logical
+            # gates -- one logical cycle each, no distillation. A CCZ is NOT
+            # expanded into 4 T equivalents.
+            n_nonclifford = (
+                logical_counts.t_count
+                + logical_counts.ccz_count
+                + logical_counts.rotation_count
+            )
+        else:
+            n_nonclifford = logical_counts.total_t_equivalent
 
         # Required logical error rate: total logical error budget spread
         # across all logical qubits and all logical cycles
-        logical_depth = max(n_t_states, 1)
+        logical_depth = max(n_nonclifford, 1)
         required_logical_rate = budget.logical / (n_logical * logical_depth)
 
         # Find minimum code distance
@@ -79,10 +90,14 @@ class AnalyticalPhysicalEstimator(PhysicalEstimator):
         # Logical cycle time
         cycle_time = qec.logical_cycle_time(d, hardware.qubit_params)
 
-        # T factory estimation (simplified model)
-        t_factory = self._estimate_t_factories(
-            logical_counts, hardware, qec, d, budget
-        )
+        # T factory estimation (simplified model). Transversal codes produce
+        # magic states in-place via cultivation -- no dedicated factory.
+        if transversal:
+            t_factory = None
+        else:
+            t_factory = self._estimate_t_factories(
+                logical_counts, hardware, qec, d, budget
+            )
 
         # Runtime
         runtime = logical_depth * cycle_time
@@ -97,7 +112,9 @@ class AnalyticalPhysicalEstimator(PhysicalEstimator):
         logical_error_rate = qec.logical_error_rate(d, p)
 
         required_t_state_rate = (
-            budget.distillation / n_t_states if n_t_states > 0 else 0.0
+            0.0
+            if transversal or n_nonclifford == 0
+            else budget.distillation / n_nonclifford
         )
 
         return PhysicalEstimate(
@@ -117,7 +134,7 @@ class AnalyticalPhysicalEstimator(PhysicalEstimator):
             ),
             t_factory=t_factory,
             algorithmic_logical_depth=logical_depth,
-            num_t_states=n_t_states,
+            num_t_states=n_nonclifford,
             clock_frequency=clock_freq,
             error_budget=budget,
             required_logical_error_rate=required_logical_rate,

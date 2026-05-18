@@ -201,6 +201,39 @@ class TestFormulaQEC:
         assert restored.cycle_time_formula == fqec.cycle_time_formula
         assert restored.distance_coefficient_power == fqec.distance_coefficient_power
 
+    def test_transversal_magic_states_default_false(self):
+        fqec = FormulaQEC(
+            name="test",
+            threshold=0.01,
+            prefactor=0.03,
+            qubits_formula="2 * d * d",
+            cycle_time_formula="t_2q * d",
+        )
+        assert fqec.transversal_magic_states is False
+
+    def test_transversal_magic_states_explicit(self):
+        fqec = FormulaQEC(
+            name="lp_code",
+            threshold=0.008,
+            prefactor=2.0e-5,
+            qubits_formula="7.886",
+            cycle_time_formula="3 * t_meas",
+            transversal_magic_states=True,
+        )
+        assert fqec.transversal_magic_states is True
+
+    def test_transversal_magic_states_roundtrip(self):
+        fqec = FormulaQEC(
+            name="lp_code",
+            threshold=0.008,
+            prefactor=2.0e-5,
+            qubits_formula="7.886",
+            cycle_time_formula="3 * t_meas",
+            transversal_magic_states=True,
+        )
+        restored = FormulaQEC.from_dict(fqec.to_dict())
+        assert restored.transversal_magic_states is True
+
     def test_cycle_time_with_joint_measurement(self):
         """FormulaQEC can use t_jm for Majorana-style codes."""
         fqec = FormulaQEC(

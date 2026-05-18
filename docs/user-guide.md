@@ -517,6 +517,7 @@ FormulaQEC(
     qubits_formula: str,    # Physical qubits per logical qubit (function of d)
     cycle_time_formula: str, # Logical cycle time (function of d, t_1q, t_2q, etc.)
     distance_coefficient_power: float = 0.0,  # Power of d in error rate formula
+    transversal_magic_states: bool = False,   # Native transversal T/CCZ (no factory)
 )
 ```
 
@@ -529,6 +530,37 @@ from quompass import color_code
 
 cc = color_code()  # 6.6.6 color code with threshold 0.0077, ~4.5*d^2 qubits
 ```
+
+### Transversal Magic States
+
+By default a QEC scheme requires magic-state distillation: every T and CCZ/Toffoli
+gate is supplied by a 15-to-1 distillation factory, and a CCZ counts as four T-gate
+equivalents. For surface-code estimates of large algorithms these factories dominate
+the physical qubit count.
+
+High-rate qLDPC architectures instead apply T and CCZ gates as **native transversal
+logical operations** with magic-state cultivation — no dedicated distillation factory.
+Set `transversal_magic_states=True` to model this. When enabled, the analytical
+estimator:
+
+- reports **no T factory** (`t_factory is None`, zero factory qubits); and
+- counts each CCZ/Toffoli as **one logical cycle** rather than four T equivalents.
+
+```python
+lp_qldpc = FormulaQEC(
+    name="lp_qldpc",
+    threshold=0.008,
+    prefactor=2.0e-5,
+    qubits_formula="7.886",        # high-rate code: ~constant per-logical overhead
+    cycle_time_formula="3 * t_meas",
+    transversal_magic_states=True,
+)
+```
+
+This is the mechanism behind the neutral-atom example
+(`examples/shor_2048_gidney2025.yaml` with `examples/lp_qldpc.yaml`): it reproduces
+the ~11,000-qubit RSA-2048 architecture of Cain et al. 2026 (arXiv:2603.28627),
+versus ~16 million qubits for the same logical circuit on a surface code.
 
 ---
 
