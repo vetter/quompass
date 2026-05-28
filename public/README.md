@@ -4,6 +4,14 @@ A Python library for estimating the physical resources required to run fault-tol
 
 ## Installation
 
+With [uv](https://docs.astral.sh/uv/) (recommended):
+
+```bash
+uv add quompass
+```
+
+With pip:
+
 ```bash
 pip install quompass
 ```
@@ -11,11 +19,36 @@ pip install quompass
 Optional extras:
 
 ```bash
-pip install quompass[viz]       # matplotlib plotting
-pip install quompass[qualtran]  # Qualtran logical estimation backend
-pip install quompass[azure]     # Azure QRE physical estimation backend
-pip install quompass[all]       # everything
-pip install quompass[dev]       # development tools (pytest, ruff, mypy)
+# uv
+uv add "quompass[viz]"       # matplotlib plotting
+uv add "quompass[qualtran]"  # Qualtran logical estimation backend
+uv add "quompass[azure]"     # Azure QRE physical estimation backend
+uv add "quompass[all]"       # everything
+uv add --dev "quompass[dev]" # development tools (pytest, ruff, mypy)
+
+# pip
+pip install quompass[viz]
+pip install quompass[qualtran]
+pip install quompass[azure]
+pip install quompass[all]
+pip install quompass[dev]
+```
+
+### From source
+
+```bash
+# uv
+git clone https://github.com/<org>/quompass && cd quompass
+uv sync --extra dev          # install with dev extras
+uv sync --all-extras         # install everything
+uv run pytest tests/unit -v  # run unit tests
+uv run quompass --help       # run the CLI
+
+# pip
+git clone https://github.com/<org>/quompass && cd quompass
+pip install -e ".[dev]"
+pytest tests/unit -v
+quompass --help
 ```
 
 ## Quick Start (Python)
